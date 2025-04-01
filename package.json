@@ -1,0 +1,36 @@
+{
+  "name": "playwright-dom-extractor",
+  "version": "0.1.0",
+  "description": "A tool to extract DOM elements and create semantic selectors for Playwright tests",
+  "main": "update-semantic-index.ts",
+  "scripts": {
+    "test": "playwright test",
+    "update-semantic-index": "ts-node update-semantic-index.ts",
+    "update-index": "ts-node update-semantic-index.ts --update-index",
+    "dom-monitor": "ts-node dom-monitor-cli.ts"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.51.1",
+    "axios": "^1.8.4",
+    "glob": "^10.4.5",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^22.13.17",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "semantic-selectors",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT"
+}
