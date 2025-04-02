@@ -20,9 +20,12 @@
     "@executeautomation/playwright-mcp-server": "^1.0.0",
     "@playwright/test": "^1.42.1",
     "axios": "^1.6.7",
+    "chalk": "^4.1.2",
     "commander": "^13.1.0",
     "glob": "^10.3.10",
+    "inquirer": "^8.2.5",
     "minimist": "^1.2.8",
+    "ora": "^5.4.1",
     "playwright": "^1.42.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
@@ -32,10 +35,7 @@
     "@types/inquirer": "^8.2.10",
     "@types/minimist": "^1.2.5",
     "@types/node": "^22.13.17",
-    "chalk": "^5.4.1",
-    "dotenv-cli": "^8.0.0",
-    "inquirer": "^12.5.0",
-    "ora": "^8.2.0"
+    "dotenv-cli": "^8.0.0"
   },
   "engines": {
     "node": ">=16.0.0"

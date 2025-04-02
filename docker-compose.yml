@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  dom-extractor:
+    build: .
+    container_name: playwright-dom-extractor
+    volumes:
+      - ./mappings:/app/mappings
+      - ./.cursor:/app/.cursor
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000" # If your app needs a port
+    stdin_open: true # Keep STDIN open
+    tty: true # Allocate a TTY 

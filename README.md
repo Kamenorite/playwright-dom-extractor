@@ -20,9 +20,29 @@ A powerful tool for extracting DOM elements from web pages, generating semantic 
 git clone https://github.com/yourusername/playwright-dom-extractor.git
 cd playwright-dom-extractor
 
-# Install dependencies
-npm install
+# Install dependencies (recommended for consistency)
+npm ci
 ```
+
+## Cross-Machine Compatibility
+
+This project now includes Docker support and dependency versioning to ensure consistent behavior across different machines and environments.
+
+### Option 1: Docker Installation (Recommended)
+
+```bash
+# Build and run with Docker
+docker-compose up --build
+```
+
+### Option 2: Direct Installation
+
+```bash
+# Install with exact versions
+npm ci
+```
+
+For detailed guidance on cross-machine setup, troubleshooting ESM vs CommonJS issues, and best practices, see [CROSS-MACHINE-SETUP.md](CROSS-MACHINE-SETUP.md).
 
 ## Enhanced Semantic Key Generation
 
