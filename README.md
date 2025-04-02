@@ -124,6 +124,35 @@ For the traditional Playwright MCP server without direct Cursor AI integration:
 }
 ```
 
+## Smart Semantic Selectors (NEW)
+
+The Playwright DOM Extractor now features an intelligent semantic selector system that supports fuzzy matching and automatic context detection. This makes writing tests much faster and more intuitive.
+
+### Key Benefits:
+
+- **Partial Key Matching**: Type just part of a semantic key and it will find the best match
+- **Fuzzy Matching**: Use descriptive terms instead of exact keys
+- **Context Detection**: Automatically detects page context from the URL in your test
+- **Pattern Matching**: Use wildcards to match patterns in semantic keys
+
+### Usage Examples:
+
+```typescript
+// Instead of using exact keys like 'login_text_input_username',
+// just use partial or descriptive terms:
+const usernameField = await getSemanticSelector('username');
+const loginButton = await getSemanticSelector('submit login');
+const welcomeMessage = await getSemanticSelector('*_heading_welcome');
+
+// The system automatically detects the page context from your test:
+await page.goto('https://example.com/profile');
+const saveButton = await getSemanticSelector('save');  // Finds profile_button_save
+```
+
+This feature makes your tests more maintainable and faster to write, reducing the cognitive load of remembering exact semantic key names.
+
+See [examples/smart-selector-demo.spec.ts](examples/smart-selector-demo.spec.ts) for a complete demonstration.
+
 ## Usage
 
 ### Scanning Spec Files
@@ -205,7 +234,8 @@ The `DOMMonitor` class provides methods to:
 ### Semantic Helper
 
 The `utils/semantic-helper.ts` module provides:
-- `getSemanticSelector(key, featureName?)`: Get a selector for a semantic key
+- `getSemanticSelector(key, featureName?)`: Get a selector for a semantic key (now with smart matching)
+- `getSmartSemanticSelector(partialKey, featureName?)`: Get a selector using fuzzy matching
 - `updateSelectorIndex(url, path?, featureName?)`: Update semantic mappings
 - `getAllSemanticKeys(path?)`: Get all available semantic keys
 - `getFeatureSemanticKeys(featureName, path?)`: Get keys for a specific feature

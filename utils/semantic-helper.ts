@@ -21,6 +21,12 @@ interface DOMElement {
 // Cache for loaded mappings to avoid repeated file reads
 const mappingCache: Record<string, DOMElement[]> = {};
 
+// Cache specifically for URL to mapping file lookup
+const urlMappingCache: Record<string, string> = {};
+
+// Cache for test file to URL mapping (for context detection)
+const testUrlCache: Map<string, string> = new Map();
+
 /**
  * Clear mapping cache - useful for testing
  */
@@ -28,6 +34,10 @@ export function clearMappingCache(): void {
   Object.keys(mappingCache).forEach(key => {
     delete mappingCache[key];
   });
+  Object.keys(urlMappingCache).forEach(key => {
+    delete urlMappingCache[key];
+  });
+  testUrlCache.clear();
 }
 
 /**
@@ -43,6 +53,16 @@ export async function getSemanticSelector(
   featureName?: string,
   mappingPath: string = './mappings'
 ): Promise<string> {
+  // If this is a partial/fuzzy match request, use the smart selector function
+  if (!semanticKey.includes('_') || semanticKey.endsWith('_') || semanticKey.includes('*')) {
+    try {
+      return await getSmartSemanticSelector(semanticKey, featureName, mappingPath);
+    } catch (error) {
+      // If smart selector fails, continue with exact match approach
+      console.warn(`Smart selector failed, falling back to exact match: ${error}`);
+    }
+  }
+
   // Load all mapping files if not in cache
   if (Object.keys(mappingCache).length === 0) {
     await loadAllMappings(mappingPath);
@@ -73,6 +93,202 @@ export async function getSemanticSelector(
   }
 
   throw new Error(`Semantic key '${semanticKey}' not found in any mapping files`);
+}
+
+/**
+ * Gets a smart/fuzzy semantic selector that handles partial matching
+ * Intelligently analyzes the calling context to find the right element
+ * 
+ * @param partialKey The partial or fuzzy semantic key to look up
+ * @param featureName Optional feature name to scope the search
+ * @param mappingPath Custom path to the mapping files
+ * @returns The selector string
+ */
+export async function getSmartSemanticSelector(
+  partialKey: string,
+  featureName?: string,
+  mappingPath: string = './mappings'
+): Promise<string> {
+  // Load all mapping files if not in cache
+  if (Object.keys(mappingCache).length === 0) {
+    await loadAllMappings(mappingPath);
+  }
+
+  // Try to detect the feature/context from the calling stack if not provided
+  if (!featureName) {
+    featureName = await detectFeatureFromCallingContext();
+  }
+
+  // Create a normalized partial key for matching
+  const normalizedPartialKey = partialKey.toLowerCase().trim();
+
+  // Different matching strategies
+  const matchingElements: Array<{element: DOMElement, matchScore: number}> = [];
+
+  // Collect all elements with semantic keys
+  for (const file of Object.keys(mappingCache)) {
+    for (const element of mappingCache[file]) {
+      if (!element.semanticKey) continue;
+      
+      const key = element.semanticKey.toLowerCase();
+      let matchScore = 0;
+
+      // Exact match gets highest score
+      if (key === normalizedPartialKey) {
+        matchScore = 100;
+      }
+      // Feature-prefixed match
+      else if (featureName && key === `${featureName.toLowerCase()}_${normalizedPartialKey}`) {
+        matchScore = 95;
+      }
+      // Starts with match
+      else if (key.startsWith(normalizedPartialKey)) {
+        matchScore = 90;
+      }
+      // Contains match
+      else if (key.includes(normalizedPartialKey)) {
+        matchScore = 80;
+      }
+      // For wildcards or more complex partial matches
+      else if (normalizedPartialKey.includes('*')) {
+        const pattern = normalizedPartialKey.replace(/\*/g, '.*');
+        if (new RegExp(pattern).test(key)) {
+          matchScore = 70;
+        }
+      }
+      // Word match (each word in partial key appears in the full key)
+      else {
+        const words = normalizedPartialKey.split(/[_\s]+/).filter(w => w.length > 2);
+        if (words.length > 0) {
+          const matches = words.filter(word => key.includes(word));
+          if (matches.length === words.length) {
+            matchScore = 60 + (matches.length * 5);
+          }
+          else if (matches.length > 0) {
+            matchScore = 40 + (matches.length * 5);
+          }
+        }
+      }
+
+      // If there's a feature name and this element belongs to it, boost the score
+      if (featureName && 
+          (element.featureName === featureName || 
+           element.semanticKey.startsWith(`${featureName.toLowerCase()}_`))) {
+        matchScore += 10;
+      }
+
+      // If the element has a description that matches keywords, boost score
+      if (element.innerText && normalizedPartialKey.split(/[_\s]+/).some(word => 
+          element.innerText!.toLowerCase().includes(word) && word.length > 2)) {
+        matchScore += 5;
+      }
+
+      if (matchScore > 0) {
+        matchingElements.push({ element, matchScore });
+      }
+    }
+  }
+
+  // Sort by match score
+  matchingElements.sort((a, b) => b.matchScore - a.matchScore);
+
+  // If we have matches, return the best one
+  if (matchingElements.length > 0) {
+    const bestMatch = matchingElements[0].element;
+    
+    // Log top matches for debugging (limited to top 3)
+    console.log(`Smart selector matched '${partialKey}' to:`);
+    matchingElements.slice(0, 3).forEach(({ element, matchScore }) => {
+      console.log(`- ${element.semanticKey} (score: ${matchScore})`);
+    });
+
+    // Return the best available selector
+    if (bestMatch.attributes && bestMatch.attributes['data-testid']) {
+      return `[data-testid="${bestMatch.attributes['data-testid']}"]`;
+    } else if (bestMatch.id) {
+      return `#${bestMatch.id}`;
+    } else if (bestMatch.xpath) {
+      return bestMatch.xpath;
+    }
+  }
+
+  throw new Error(`No matching semantic key found for '${partialKey}'`);
+}
+
+/**
+ * Attempt to detect the feature/context from the calling context
+ * This analyzes the call stack to find the test file and map it to a URL
+ */
+async function detectFeatureFromCallingContext(): Promise<string | undefined> {
+  try {
+    // Capture the stack trace
+    const stack = new Error().stack || '';
+    
+    // Find the caller file
+    const stackLines = stack.split('\n');
+    let callerFile = '';
+    
+    for (const line of stackLines) {
+      if (line.includes('.spec.ts') || line.includes('.test.ts')) {
+        const match = line.match(/\((.+\.(?:spec|test)\.ts):/);
+        if (match && match[1]) {
+          callerFile = match[1];
+          break;
+        }
+      }
+    }
+    
+    if (!callerFile) return undefined;
+    
+    // Check if we have a cached URL for this test file
+    if (testUrlCache.has(callerFile)) {
+      const url = testUrlCache.get(callerFile);
+      
+      // Try to extract feature name from mapping file that matches this URL
+      if (url) {
+        for (const filename of Object.keys(mappingCache)) {
+          if (filename.includes(url.replace(/https?:\/\//, '').replace(/\./g, '_'))) {
+            // Extract feature name from filename if it has a prefix
+            const basename = path.basename(filename, '.json');
+            const parts = basename.split('_');
+            if (parts.length > 2) {
+              return parts[0]; // First part is the feature name
+            }
+          }
+        }
+      }
+      
+      return undefined;
+    }
+    
+    // If we don't have a cached URL, try to scan the test file to find the URL
+    if (fs.existsSync(callerFile)) {
+      const content = fs.readFileSync(callerFile, 'utf-8');
+      
+      // Look for page.goto calls
+      const gotoMatches = content.match(/page\.goto\s*\(\s*['"]([^'"]+)['"]/);
+      if (gotoMatches && gotoMatches[1]) {
+        const url = gotoMatches[1];
+        testUrlCache.set(callerFile, url);
+        
+        // Now look for a feature name in mapping files
+        for (const filename of Object.keys(mappingCache)) {
+          if (filename.includes(url.replace(/https?:\/\//, '').replace(/\./g, '_'))) {
+            // Extract feature name from filename if it has a prefix
+            const basename = path.basename(filename, '.json');
+            const parts = basename.split('_');
+            if (parts.length > 2) {
+              return parts[0]; // First part is the feature name
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to detect feature from context:', error);
+  }
+  
+  return undefined;
 }
 
 /**
@@ -164,8 +380,12 @@ export async function updateSelectorIndex(
     }
   });
   
+  // Store the URL to mapping file relationship
+  const mappingFile = path.join(mappingPath, urlToFilename(url, featureName));
+  urlMappingCache[url] = mappingFile;
+  
   // Clear cache to ensure fresh data on next request
-  delete mappingCache[path.join(mappingPath, urlToFilename(url, featureName))];
+  delete mappingCache[mappingFile];
   
   return selectorMap;
 }
