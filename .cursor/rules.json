@@ -1,0 +1,55 @@
+{
+  "rules": [
+    {
+      "name": "Suggest Semantic Selectors",
+      "pattern": "page\\.locator\\([\"']([^\"']+)[\"']\\)",
+      "description": "Suggests semantic selectors for Playwright tests",
+      "message": "Consider using semantic selectors for better test maintainability",
+      "severity": "suggestion",
+      "languages": ["typescript"],
+      "filePattern": "**/*.spec.ts",
+      "prompts": [
+        {
+          "name": "Convert to Semantic Selector",
+          "prompt": "This looks like a literal selector in a Playwright test. Can you suggest a semantic selector from our mapping that would replace this? The literal selector is: '{{match.1}}'. Consider the context of the test (feature name, action being performed) to find the most appropriate semantic selector. Use the getSemanticSelector function from '../utils/semantic-helper'."
+        }
+      ],
+      "actions": [
+        {
+          "name": "Convert to Semantic Selector",
+          "apply": "async function apply(match) {\n  // Import the helper to get semantic suggestions\n  const { suggestSemanticKeys } = await import('../utils/semantic-helper.js');\n  \n  // Get suggestions based on the selector description\n  const suggestions = await suggestSemanticKeys(match[1]);\n  \n  if (suggestions.length === 0) {\n    return `// No semantic selector found for this element\n// Consider adding it to the mapping\npage.locator('${match[1]}')`;  \n  }\n  \n  // Format top suggestion as code\n  const bestMatch = suggestions[0];\n  const allSuggestions = suggestions.map(s => `// - ${s.key}: ${s.description}`).join('\\n');\n  \n  return `// Available semantic selectors for this element:\\n${allSuggestions}\\n\\n// Using semantic selector\\nconst selector = await getSemanticSelector('${bestMatch.key}');\npage.locator(selector)`;\n}"
+        }
+      ]
+    },
+    {
+      "name": "Import Semantic Helper",
+      "pattern": "import\\s+\\{\\s*test,\\s*expect\\s*\\}\\s+from\\s+[\"']@playwright\\/test[\"'];\\s*(?!import\\s+\\{\\s*getSemanticSelector)",
+      "description": "Suggests importing semantic helper when writing Playwright tests",
+      "message": "Consider importing getSemanticSelector for better test maintainability",
+      "severity": "suggestion",
+      "languages": ["typescript"],
+      "filePattern": "**/*.spec.ts",
+      "actions": [
+        {
+          "name": "Add Semantic Helper Import",
+          "apply": "function apply(match) {\n  return `${match[0]}\\nimport { getSemanticSelector } from '../utils/semantic-helper';`;\n}"
+        }
+      ]
+    },
+    {
+      "name": "Analyze Page Semantics with Cursor",
+      "pattern": "await\\s+page\\.goto\\([\"']([^\"']+)[\"']\\);",
+      "description": "Suggests analyzing page semantics with Cursor",
+      "message": "Use Cursor to analyze page semantics and update semantic mappings",
+      "severity": "information",
+      "languages": ["typescript"],
+      "filePattern": "**/*.spec.ts",
+      "prompts": [
+        {
+          "name": "Analyze Page with Cursor",
+          "prompt": "@Web Visit {{match.1}} and analyze the semantic structure of the page. What elements are present and what would be good semantic selectors for them?"
+        }
+      ]
+    }
+  ]
+} 

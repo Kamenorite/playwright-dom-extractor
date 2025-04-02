@@ -13,7 +13,7 @@ const config: PlaywrightTestConfig = {
   reporter: 'html',
   use: {
     actionTimeout: 0,
-    baseURL: 'https://example.com',
+    baseURL: 'https://hivebrite.io',
     trace: 'on-first-retry',
   },
 };

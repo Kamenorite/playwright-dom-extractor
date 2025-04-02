@@ -1,26 +1,41 @@
 {
   "name": "playwright-dom-extractor",
   "version": "0.1.0",
-  "description": "A tool to extract DOM elements and create semantic selectors for Playwright tests",
-  "main": "update-semantic-index.ts",
+  "description": "A tool to extract DOM elements from web pages and generate semantic keys with data-testid prioritization",
+  "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "update-semantic-index": "ts-node update-semantic-index.ts",
-    "update-index": "ts-node update-semantic-index.ts --update-index",
-    "dom-monitor": "ts-node dom-monitor-cli.ts"
+    "test-direct": "ts-node test-mcp.ts --direct",
+    "test-mcp": "ts-node test-mcp.ts",
+    "start-mcp-server": "npx playwright-mcp-server",
+    "scan-specs": "ts-node scan-spec-files.ts",
+    "generate-test": "ts-node generate-test.ts",
+    "update-semantics": "ts-node update-semantic-index.ts",
+    "monitor-page": "ts-node dom-monitor-cli.ts",
+    "enhance-keys": "ts-node enhance-semantic-keys.ts",
+    "generate-semantic-keys": "ts-node generate-semantic-keys.ts",
+    "cli": "ts-node interactive-cli.ts"
   },
   "dependencies": {
-    "@playwright/test": "^1.51.1",
-    "axios": "^1.8.4",
-    "glob": "^10.4.5",
-    "minimist": "^1.2.8"
+    "@executeautomation/playwright-mcp-server": "^1.0.0",
+    "@playwright/test": "^1.42.1",
+    "axios": "^1.6.7",
+    "commander": "^13.1.0",
+    "glob": "^10.3.10",
+    "minimist": "^1.2.8",
+    "playwright": "^1.42.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
+    "@types/inquirer": "^8.2.10",
     "@types/minimist": "^1.2.5",
     "@types/node": "^22.13.17",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.2"
+    "chalk": "^5.4.1",
+    "dotenv-cli": "^8.0.0",
+    "inquirer": "^12.5.0",
+    "ora": "^8.2.0"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -29,8 +44,17 @@
     "playwright",
     "testing",
     "semantic-selectors",
-    "automation"
+    "automation",
+    "data-testid",
+    "dom-extraction"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/playwright-dom-extractor"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/playwright-dom-extractor/issues"
+  }
 }

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Data TestID Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    form {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 5px;
+    }
+    .form-row {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+  </style>
+</head>
+<body>
+  <h1 data-testid="login_heading_main">Login Form with TestIDs</h1>
+  <p>This page demonstrates the use of data-testid attributes for testing.</p>
+  
+  <form data-testid="login_form">
+    <div class="form-row">
+      <label for="username" data-testid="login_label_username">Username:</label>
+      <input 
+        type="text" 
+        id="username" 
+        name="username" 
+        data-testid="login_text_input_username" 
+        placeholder="Enter your username">
+    </div>
+    
+    <div class="form-row">
+      <label for="password" data-testid="login_label_password">Password:</label>
+      <input 
+        type="password" 
+        id="password" 
+        name="password" 
+        data-testid="login_password_input" 
+        placeholder="Enter your password">
+    </div>
+    
+    <div class="form-row">
+      <label for="role" data-testid="login_label_role">Role:</label>
+      <select id="role" name="role" data-testid="login_dropdown_role">
+        <option value="user">User</option>
+        <option value="admin">Administrator</option>
+        <option value="guest">Guest</option>
+      </select>
+    </div>
+    
+    <div class="form-row">
+      <input 
+        type="checkbox" 
+        id="remember" 
+        name="remember" 
+        data-testid="login_checkbox_remember"
+        style="width: auto; margin-right: 10px;">
+      <label for="remember" style="display: inline;">Remember me</label>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" data-testid="login_submit_button">Login</button>
+      <button type="button" data-testid="login_reset_button" style="background-color: #9e9e9e; margin-left: 10px;">Reset</button>
+    </div>
+  </form>
+  
+  <div style="margin-top: 20px;">
+    <a href="#" data-testid="login_link_forgot_password">Forgot Password?</a>
+    <a href="#" data-testid="login_link_register" style="margin-left: 20px;">Register New Account</a>
+  </div>
+</body>
+</html> 

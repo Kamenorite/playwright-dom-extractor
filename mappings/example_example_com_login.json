@@ -1,0 +1,22 @@
+[
+  {
+    "tagName": "h1",
+    "attributes": {},
+    "innerText": "Example Domain",
+    "xpath": "/body/div/h1",
+    "url": "https://example.com/login",
+    "featureName": "Example",
+    "semanticKey": "example_heading_domain"
+  },
+  {
+    "tagName": "a",
+    "attributes": {
+      "href": "https://www.iana.org/domains/example"
+    },
+    "innerText": "More information...",
+    "xpath": "/body/div/p[2]/a",
+    "url": "https://example.com/login",
+    "featureName": "Example",
+    "semanticKey": "example_link_more_information"
+  }
+]

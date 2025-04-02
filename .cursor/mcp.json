@@ -1,0 +1,7 @@
+{
+  "mcp_server": "https://api.cursor.sh",
+  "cursor_use_internal": true,
+  "ai": {
+    "provider": "cursor"
+  }
+} 

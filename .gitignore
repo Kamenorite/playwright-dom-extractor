@@ -1,0 +1,55 @@
+# Node modules
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Test output
+/test-output/
+/screenshots/
+/videos/
+
+# Generated files
+/mappings/*.png
+
+# TypeScript build output
+*.tsbuildinfo
+
+# Temporary files
+temp/
+*.tmp
+*.log
+
+# IDE-specific files
+*.code-workspace
+.history/ 
