@@ -26,7 +26,7 @@ const banner = `
 `;
 
 // Check for MCP configuration
-const hasMcpConfig = fs.existsSync(path.join(__dirname, '.cursor/mcp.json'));
+const hasMcpConfig = fs.existsSync(path.join(process.cwd(), '.cursor/mcp.json'));
 
 /**
  * Main function to run the interactive CLI
