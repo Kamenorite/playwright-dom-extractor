@@ -23,6 +23,7 @@ This directory contains materials for presenting and demonstrating the Playwrigh
 4. **Key Features**
    - DOM element extraction with semantic key generation
    - Data-testid attribute prioritization
+   - Smart semantic selector system
    - AI-powered element analysis (with MCP integration)
    - Test generation and element mapping
 
@@ -90,11 +91,12 @@ This directory contains materials for presenting and demonstrating the Playwrigh
 2. Run extraction on this page
 3. Show how data-testid is prioritized in selector generation
 
-### Demo 4: Test Generation
+### Demo 4: Smart Selector System
 
-1. Show example of using generated selectors in a Playwright test
-2. Demonstrate how semantic selectors improve test readability
+1. Show example of using intelligent matching with the semantic selector system
+2. Demonstrate how smart selectors improve test readability
 3. Show how tests remain stable when UI changes (but data-testid stays consistent)
+4. Demonstrate context-awareness and partial key matching
 
 ## Preparation Checklist
 
@@ -107,6 +109,6 @@ This directory contains materials for presenting and demonstrating the Playwrigh
 ## Resources to Include
 
 - GitHub repository link
-- Documentation references
+- Documentation references (README.md, SMART-SELECTOR.md, MCP-INTEGRATION.md, BEST-PRACTICES.md)
 - Sample code snippets for slides
 - Screenshots of reports and mapping files 

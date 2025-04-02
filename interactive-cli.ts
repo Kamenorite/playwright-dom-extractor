@@ -666,8 +666,8 @@ function showHelp() {
   console.log('4. Use the mappings in your Playwright tests with the semantic helper');
 
   console.log(chalk.yellow('\nDocumentation:'));
-  console.log('- MCP Integration: docs/MCP-INTEGRATION.md');
-  console.log('- Semantic Keys: SEMANTIC-KEYS.md');
+  console.log('- MCP Integration: MCP-INTEGRATION.md');
+  console.log('- Semantic Keys: SMART-SELECTOR.md');
   console.log('- Best Practices: BEST-PRACTICES.md');
 }
 

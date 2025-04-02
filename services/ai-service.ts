@@ -168,7 +168,7 @@ export class AIService {
            
            // Add timeout to avoid hanging API calls
            const controller = new AbortController();
-           const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+           const timeoutId = setTimeout(() => controller.abort(), 30000);
            
            try {
                const response = await axios.post(
@@ -180,8 +180,9 @@ export class AIService {
                    {
                        headers: {
                            'Content-Type': 'application/json',
-                           'Authorization': `Bearer ${this.options.apiKey}`
+                           Authorization: `Bearer ${this.options.apiKey}`
                        },
+                       // @ts-ignore - Axios types don't include signal property but it's supported
                        signal: controller.signal
                    }
                );

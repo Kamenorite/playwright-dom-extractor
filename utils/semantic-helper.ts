@@ -53,7 +53,7 @@ export async function getSemanticSelector(
   featureName?: string,
   mappingPath: string = './mappings'
 ): Promise<string> {
-  // If this is a partial/fuzzy match request, use the smart selector function
+  // If this is a partial/smart match request, use the smart selector function
   if (!semanticKey.includes('_') || semanticKey.endsWith('_') || semanticKey.includes('*')) {
     try {
       return await getSmartSemanticSelector(semanticKey, featureName, mappingPath);
@@ -96,10 +96,10 @@ export async function getSemanticSelector(
 }
 
 /**
- * Gets a smart/fuzzy semantic selector that handles partial matching
+ * Gets a smart semantic selector that handles partial matching
  * Intelligently analyzes the calling context to find the right element
  * 
- * @param partialKey The partial or fuzzy semantic key to look up
+ * @param partialKey The partial or descriptive semantic key to look up
  * @param featureName Optional feature name to scope the search
  * @param mappingPath Custom path to the mapping files
  * @returns The selector string

@@ -1,1 +1,0 @@
-const element = { id: 'test-id', attributes: { 'data-testid': 'test_button' } }; console.log('Selector with data-testid priority:', element.attributes && element.attributes['data-testid'] ? '[data-testid="' + element.attributes['data-testid'] + '"]' : '#' + element.id);

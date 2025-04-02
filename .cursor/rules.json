@@ -11,7 +11,8 @@
       "prompts": [
         {
           "name": "Convert to Semantic Selector",
-          "prompt": "This looks like a literal selector in a Playwright test. Can you suggest a semantic selector from our mapping that would replace this? The literal selector is: '{{match.1}}'. Consider the context of the test (feature name, action being performed) to find the most appropriate semantic selector. Use the getSemanticSelector function from '../utils/semantic-helper'."
+          "prompt": "@TRANSLATE_SELECTOR: {{match.1}}\n\nThis looks like a literal selector in a Playwright test. Please translate this to a semantic selector using the smart matching capabilities. Provide the best semantic key to replace this literal selector.",
+          "promptFile": "semantic-ai-master.mdc"
         }
       ],
       "actions": [
@@ -47,7 +48,56 @@
       "prompts": [
         {
           "name": "Analyze Page with Cursor",
-          "prompt": "@Web Visit {{match.1}} and analyze the semantic structure of the page. What elements are present and what would be good semantic selectors for them?"
+          "prompt": "@Web Visit {{match.1}} and analyze the semantic structure of the page. What elements are present and what would be good semantic selectors for them?",
+          "promptFile": "semantic-ai-master.mdc"
+        }
+      ]
+    },
+    {
+      "name": "Generate Playwright Test",
+      "pattern": "// TODO: implement test for (.*)",
+      "description": "Generates a Playwright test based on a description",
+      "message": "Use Cursor to generate a Playwright test for this functionality",
+      "severity": "information",
+      "languages": ["typescript"],
+      "filePattern": "**/*.spec.ts",
+      "prompts": [
+        {
+          "name": "Generate Test with Semantic Selectors",
+          "prompt": "@GENERATE_TEST: {{match.1}}\n\nGenerate a Playwright test for the following functionality: {{match.1}}. Use semantic selectors and best practices for test structure.",
+          "promptFile": "playwright-automation-master.mdc"
+        }
+      ]
+    },
+    {
+      "name": "Analyze HTML Element",
+      "pattern": "<([a-z][a-z0-9]*)\\s+([^>]*)>",
+      "description": "Analyzes HTML elements for semantic key generation",
+      "message": "Analyze this element to generate a semantic key",
+      "severity": "information",
+      "languages": ["html"],
+      "filePattern": "**/*.html",
+      "prompts": [
+        {
+          "name": "Analyze Element",
+          "prompt": "@ANALYZE_ELEMENT: Analyze this HTML element and suggest a semantic key:\n\n<{{match.1}} {{match.2}}>",
+          "promptFile": "semantic-ai-master.mdc"
+        }
+      ]
+    },
+    {
+      "name": "Enhance Semantic Keys",
+      "pattern": "\"semanticKey\":\\s*\"([^\"]+)\"",
+      "description": "Suggests enhancements for semantic keys",
+      "message": "Consider enhancing this semantic key for better clarity",
+      "severity": "suggestion",
+      "languages": ["json"],
+      "filePattern": "**/mappings/*.json",
+      "prompts": [
+        {
+          "name": "Enhance Semantic Key",
+          "prompt": "@ENHANCE_MAPPING: {{match.1}}\n\nReview this semantic key and suggest enhancements if needed: {{match.1}}",
+          "promptFile": "semantic-ai-master.mdc"
         }
       ]
     }

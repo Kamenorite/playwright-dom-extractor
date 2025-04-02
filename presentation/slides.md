@@ -26,7 +26,7 @@ A framework for resilient, maintainable test automation:
 ## Key Components
 
 1. **DOM Monitor**: Extract and analyze elements from web pages
-2. **Semantic Helper**: Find elements with smart, fuzzy matching
+2. **Semantic Helper**: Find elements with smart, intelligent matching
 3. **Cursor AI Integration**: Enhance key generation without API keys
 
 ---

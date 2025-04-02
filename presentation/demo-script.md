@@ -136,7 +136,7 @@ This script provides a step-by-step guide for demonstrating the capabilities of 
    - Explicit testing intent
    - Better performance than complex XPath expressions
 
-### Demo 4: Using Semantic Keys in Tests (5 minutes)
+### Demo 4: Smart Selector System (5 minutes)
 
 1. Show the demo test script:
    ```bash
@@ -161,6 +161,7 @@ This script provides a step-by-step guide for demonstrating the capabilities of 
 5. Explain what happens if HTML structure changes:
    - Show a theoretical example where IDs or classes change
    - Explain how tests using data-testid remain stable
+   - Demonstrate how intelligent matching can find elements even with partial keys
 
 ### Conclusion and Advanced Features (3 minutes)
 
@@ -180,8 +181,9 @@ This script provides a step-by-step guide for demonstrating the capabilities of 
 3. Show resources for additional information:
    - GitHub repository
    - README.md
+   - SMART-SELECTOR.md
+   - MCP-INTEGRATION.md
    - BEST-PRACTICES.md
-   - SEMANTIC-KEYS.md
 
 ### Q&A (5 minutes)
 

@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "description": "Extract DOM elements from web pages, generate semantic keys, and create Playwright tests",
   "main": "dist/index.js",
-  "type": "module",
   "scripts": {
     "test": "playwright test",
     "build": "tsc",
-    "monitor-page": "node --loader ts-node/esm dom-monitor-cli.ts",
-    "scan-specs": "node --loader ts-node/esm scan-spec-files.ts",
-    "update-semantics": "node --loader ts-node/esm update-semantic-index.ts",
+    "monitor-page": "node dist/dom-monitor-cli.js",
+    "scan-specs": "node dist/scan-spec-files.js",
+    "update-semantics": "node dist/update-semantic-index.js",
     "basic-demo": "node examples/dom-extraction-demo.js",
     "mcp-demo": "node examples/mcp-integration-demo.js",
-    "semantic-demo": "playwright test examples/essential-demo.spec.ts"
+    "semantic-demo": "playwright test examples/essential-demo.spec.ts",
+    "cli": "node dist/interactive-cli.js"
   },
   "keywords": [
     "playwright",
@@ -26,12 +26,14 @@
   "license": "MIT",
   "dependencies": {
     "@playwright/test": "^1.40.1",
+    "axios": "1.8.4",
     "chalk": "^4.1.2",
     "commander": "^10.0.1",
     "express": "^4.18.2",
     "fs-extra": "^11.1.1",
     "glob": "^10.3.0",
     "inquirer": "^9.2.7",
+    "minimist": "1.2.8",
     "open": "^9.1.0",
     "ora": "^6.3.1",
     "playwright": "^1.40.1",
@@ -39,5 +41,11 @@
     "prettier": "^2.8.8",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.3"
+  },
+  "devDependencies": {
+    "@types/axios": "0.9.36",
+    "@types/inquirer": "9.0.7",
+    "@types/minimist": "1.2.5",
+    "@types/node": "22.14.0"
   }
 }

@@ -1,6 +1,6 @@
 # Cross-Machine Compatibility Guide
 
-This guide provides instructions for setting up the Playwright DOM Extractor on different machines and environments to avoid compatibility issues.
+This document provides instructions for setting up the Playwright DOM Extractor on different machines and environments to avoid compatibility issues.
 
 ## Option 1: Direct Installation
 
@@ -80,10 +80,15 @@ For Cursor MCP integration, ensure your `.cursor/mcp.json` file exists and conta
 
 ```json
 {
-  "server": "cursor-model-context",
-  "provider": "cursor"
+  "mcp_server": "https://api.cursor.sh",
+  "cursor_use_internal": true,
+  "ai": {
+    "provider": "cursor"
+  }
 }
 ```
+
+For more details on Cursor MCP integration, see [MCP-INTEGRATION.md](MCP-INTEGRATION.md).
 
 ## Environment Variables
 
@@ -106,4 +111,10 @@ To keep the project compatible across machines:
 2. Use `npm ci` instead of `npm install` for consistent installs
 3. Document Node.js version requirements
 4. Consider using Docker for deployment
-5. Test on multiple platforms before releasing updates 
+5. Test on multiple platforms before releasing updates
+
+## Related Documentation
+
+- [README.md](README.md): Main project documentation and overview
+- [MCP-INTEGRATION.md](MCP-INTEGRATION.md): Detailed guide for Cursor AI integration
+- [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md): Understanding semantic key conventions 

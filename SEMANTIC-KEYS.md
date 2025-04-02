@@ -63,6 +63,8 @@ The system prioritizes selectors in the following order:
 
 This prioritization ensures tests are as reliable as possible, especially when the application has been specifically instrumented with data-testid attributes for testing.
 
+For more details on implementing data-testid attributes effectively, see [BEST-PRACTICES.md](BEST-PRACTICES.md).
+
 ## Tools for Semantic Key Generation
 
 ### 1. Command Line Generator
@@ -131,6 +133,8 @@ test('Login workflow', async ({ page }) => {
 });
 ```
 
+For intelligent ways to use partial or descriptive keys instead of full semantic keys, see [SMART-SELECTOR.md](SMART-SELECTOR.md).
+
 ## Best Practices
 
 1. **Add data-testid attributes** to important elements in your application for maximum reliability
@@ -143,12 +147,22 @@ test('Login workflow', async ({ page }) => {
 8. **Periodically update** keys when site structure changes
 9. **Use appropriate waiting strategies** when working with dynamic content
 
+For an expanded set of best practices, see [BEST-PRACTICES.md](BEST-PRACTICES.md).
+
 ## Integration with Cursor AI
 
-This system integrates with Cursor's AI capabilities to generate better semantic keys. The `.cursor/prompts/semantic-automation.mdc` file defines rules for semantic key generation that Cursor AI can use when assisting with test creation.
+This system integrates with Cursor's AI capabilities to generate better semantic keys. The `.cursor/prompts/semantic-ai-master.mdc` file defines rules for semantic key generation that Cursor AI can use when assisting with test creation.
 
 To get AI help with semantic keys, use the following prompts:
 
 - `@analyze <url>`: Analyze page structure and suggest semantic keys
 - `@generate-keys <url>`: Generate semantic keys for all interactive elements
 - `@create-test <description>`: Create a test using semantic selectors 
+
+For more details on Cursor AI integration, see [MCP-INTEGRATION.md](MCP-INTEGRATION.md).
+
+## Related Documentation
+
+- [SMART-SELECTOR.md](SMART-SELECTOR.md): Using the smart selector system with partial and descriptive keys
+- [BEST-PRACTICES.md](BEST-PRACTICES.md): Best practices for testing with semantic selectors
+- [MCP-INTEGRATION.md](MCP-INTEGRATION.md): Using Cursor AI to enhance semantic key generation 

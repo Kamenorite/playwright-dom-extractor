@@ -6,8 +6,8 @@
  */
 
 const { chromium } = require('playwright');
-const { DOMMonitor } = require('../dom-monitor');
-const { MCPAIService } = require('../services/mcp-ai-service');
+const { DOMMonitor } = require('../dist/dom-monitor');
+const { MCPAIService } = require('../dist/services/mcp-ai-service');
 const path = require('path');
 const fs = require('fs');
 
@@ -106,7 +106,7 @@ async function runMCPDemo() {
     await browser.close();
   }
   
-  console.log('\n📚 Learn more about MCP integration in docs/MCP-INTEGRATION.md');
+  console.log('\n📚 Learn more about MCP integration in MCP-INTEGRATION.md');
 }
 
 // Run the demo

@@ -6,7 +6,7 @@
  */
 
 const { chromium } = require('playwright');
-const { DOMMonitor } = require('../dom-monitor');
+const { DOMMonitor } = require('../dist/dom-monitor');
 const path = require('path');
 const fs = require('fs');
 
@@ -41,6 +41,10 @@ async function runDemo() {
     // Step 1: Navigate to demo page
     console.log('Step 1: Navigating to demo page...');
     await page.goto('https://example.com');
+    
+    // Initialize DOMMonitor
+    await domMonitor.init();
+    await domMonitor.navigateTo('https://example.com');
     
     // Step 2: Extract DOM elements
     console.log('Step 2: Extracting DOM elements...');

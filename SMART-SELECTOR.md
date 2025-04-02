@@ -67,13 +67,13 @@ const buttons = await getSemanticSelector('login_button_*');
 const inputs = await getSemanticSelector('*_input_*');
 ```
 
-### 5. Automatic Fallback to Fuzzy Matching
+### 5. Automatic Fallback to Smart Matching
 
 If an exact match isn't found, the system will:
 1. Try partial key matching
-2. Attempt fuzzy matching
+2. Check for contextual matches
 3. Look for natural language matches
-4. Return the best available match
+4. Return the best available match based on a scoring system
 
 ## How It Works
 
@@ -81,7 +81,7 @@ The smart selector system uses a multi-step matching process:
 
 1. Check for exact matches
 2. Try context-aware partial matching
-3. Apply fuzzy matching algorithms
+3. Apply intelligent word/term matching
 4. Use pattern matching for wildcards
 5. Score and rank potential matches
 6. Return the best match (or throw an error if no good match)
@@ -137,6 +137,8 @@ const navItems = await getSemanticSelector('header_nav_*');
 3. **Be Descriptive**: Use meaningful terms that match the element's purpose
 4. **Fallback Strategy**: Have a fallback plan for elements that might be difficult to match
 
+For more best practices on semantic selectors and data-testid attributes, see [BEST-PRACTICES.md](BEST-PRACTICES.md).
+
 ## Troubleshooting
 
 If you're having trouble with smart selectors:
@@ -154,4 +156,10 @@ The simplest way to experience the smart selector system is to run the demo:
 npm run semantic-demo
 ```
 
-This will run a test that demonstrates all the features of the smart selector system. 
+This will run a test that demonstrates all the features of the smart selector system.
+
+## Related Documentation
+
+- [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md): Learn about semantic key naming conventions and formats
+- [BEST-PRACTICES.md](BEST-PRACTICES.md): Best practices for testing with semantic selectors
+- [MCP-INTEGRATION.md](MCP-INTEGRATION.md): Using Cursor AI to enhance semantic key generation 

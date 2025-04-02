@@ -82,6 +82,8 @@ const loginButton = await getSemanticSelector('login button');
 const submitButton = await getSemanticSelector('submit');
 ```
 
+For more details on using smart semantic selectors, see [SMART-SELECTOR.md](SMART-SELECTOR.md).
+
 ## Troubleshooting
 
 If you encounter issues with MCP integration:
@@ -156,4 +158,10 @@ The project includes code rules (in `.cursor/rules.json`) that automatically sug
 - You have TODO comments for tests to implement
 - You're working with HTML elements or mapping files
 
-These prompts will appear in your editor as you work with relevant code patterns. 
+These prompts will appear in your editor as you work with relevant code patterns.
+
+## Related Documentation
+
+- [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md): Learn about semantic key naming conventions
+- [SMART-SELECTOR.md](SMART-SELECTOR.md): Detailed guide on using the smart selector system
+- [BEST-PRACTICES.md](BEST-PRACTICES.md): Best practices for testing with semantic selectors 

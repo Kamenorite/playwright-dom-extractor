@@ -97,6 +97,8 @@ Examples:
 - `cart_remove_button_item`
 - `profile_image_avatar`
 
+For more details on the semantic key format, see [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md).
+
 ### data-testid in Forms
 
 Forms should have data-testid attributes for all interactive elements:
@@ -161,6 +163,8 @@ test('User can log in', async ({ page }) => {
   await expect(page.locator(welcomeText)).toBeVisible();
 });
 ```
+
+You can also use the smart selector system with partial keys or descriptive terms for more readable tests. See [SMART-SELECTOR.md](SMART-SELECTOR.md) for details.
 
 ## Handling Dynamic Content and States
 
@@ -235,5 +239,11 @@ Incorporate data-testid checks into your CI/CD pipeline:
 1. Run automated tests that verify data-testid attributes are present
 2. Generate reports of elements missing data-testid attributes
 3. Include data-testid coverage in code review checklists
+
+## Related Documentation
+
+- [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md): Comprehensive guide to semantic key conventions
+- [SMART-SELECTOR.md](SMART-SELECTOR.md): Using the smart selector system for more readable tests
+- [MCP-INTEGRATION.md](MCP-INTEGRATION.md): Using Cursor AI to help identify and generate semantic selectors
 
 By following these best practices, you'll maximize the effectiveness of the Playwright DOM Extractor's data-testid prioritization feature and make your tests more robust and maintainable. 
