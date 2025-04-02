@@ -69,6 +69,23 @@ export class MCPAIService extends AIService {
       
       // Get semantic keys using MCP AI prompt
       const elementsWithKeys = await this.enhanceElementsWithMCP(elements);
+      
+      // Verify we got meaningful keys
+      let meaningfulKeyCount = 0;
+      elementsWithKeys.forEach(element => {
+        if (element.semanticKey && 
+            !element.semanticKey.includes('_element') && 
+            !element.semanticKey.match(/section_[0-9a-f]+$/)) {
+          meaningfulKeyCount++;
+        }
+      });
+      
+      console.log(`Generated ${meaningfulKeyCount} meaningful semantic keys out of ${elementsWithKeys.length} elements via MCP`);
+      
+      if (meaningfulKeyCount < elements.length * 0.5) {
+        console.warn('Less than 50% of elements received meaningful semantic keys. The MCP integration might not be working optimally.');
+      }
+      
       return elementsWithKeys;
     } catch (error) {
       console.error('Error during MCP page analysis:', error);
@@ -166,18 +183,14 @@ export class MCPAIService extends AIService {
    */
   private async enhanceElementsWithMCP(elements: any[]): Promise<any[]> {
     if (!this.page) {
-      throw new Error('Page not initialized');
+      throw new Error('Page not initialized. Call setPlaywrightPage first.');
     }
-
+    
     try {
-      // Using MCP requires specific handling in Cursor
-      // For this implementation, we'll use a custom evaluation in the page context
-      // that leverages MCP internally
-
-      // First, serialize the elements to JSON so we can pass them to the page context
+      // Convert elements to JSON to pass them to page.evaluate
       const elementsJson = JSON.stringify(elements);
       
-      // Execute the enhancement logic in the page context
+      // Use page.evaluate to access MCP on the client side
       const enhancedElementsJson = await this.page.evaluate(async (elementsData) => {
         // Parse the elements from JSON
         const elements = JSON.parse(elementsData);
@@ -191,14 +204,29 @@ export class MCPAIService extends AIService {
               .replace(/\s+/g, '_'); // Replace spaces with underscores
           }
           
-          // Priority 2: Use id if available
-          if (element.attributes && element.attributes.id) {
+          // Priority 2: Use id if available (if it's not just a numeric id)
+          if (element.attributes && element.attributes.id && !/^\d+$/.test(element.attributes.id) && !/^section_\d+$/.test(element.attributes.id)) {
             return element.attributes.id.toLowerCase()
               .replace(/[^\w\s-]/g, '')
               .replace(/\s+/g, '_');
           }
           
-          // Priority 3: Construct a semantic key based on element type and text
+          // Priority 3: For sections and containers, extract meaningful words from inner text
+          if (['section', 'div', 'article', 'aside', 'nav', 'header', 'footer'].includes(element.tagName) && element.innerText) {
+            // Extract key words from the text
+            const significantWords = element.innerText.trim()
+              .replace(/[^\w\s]/gi, '')
+              .split(/\s+/)
+              .filter((word: string) => word.length > 2 && !['and', 'the', 'for', 'with'].includes(word.toLowerCase()))
+              .slice(0, 3); // Take top 3 meaningful words
+              
+            if (significantWords.length > 0) {
+              const contextHint = significantWords.join('_').toLowerCase();
+              return `${element.tagName}_${contextHint}`;
+            }
+          }
+          
+          // Priority 4: Construct a semantic key based on element type and text
           let prefix = '';
           switch (element.tagName) {
             case 'button':

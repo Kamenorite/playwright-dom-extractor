@@ -237,15 +237,24 @@ export class DOMMonitor {
       return `${prefix}${testId}`;
     }
     
-    // Use id if available and seems reasonable
-    if (element.id && !/^[a-f0-9]{8,}$/i.test(element.id) && !/^\d+$/.test(element.id)) {
+    // Use id if available and seems reasonable (not just numbers or hex)
+    if (element.id && !/^[a-f0-9]{8,}$/i.test(element.id) && !/^\d+$/.test(element.id) && !/^section_\d+$/.test(element.id)) {
       return `${prefix}${element.id}`;
     }
     
-    // Use innerText for common interactive elements
-    if (['button', 'a', 'h1', 'h2', 'h3', 'label'].includes(element.tagName) && element.innerText) {
-      const cleanText = element.innerText.substring(0, 20).replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
-      return `${prefix}${element.tagName}_${cleanText}`;
+    // Use innerText for common interactive elements and section elements
+    if (['button', 'a', 'h1', 'h2', 'h3', 'label', 'section', 'nav', 'header', 'footer', 'article', 'aside'].includes(element.tagName) && element.innerText) {
+      // Create a more descriptive key based on text content
+      const words = element.innerText.trim()
+        .replace(/[^\w\s]/gi, '')  // Remove special characters
+        .split(/\s+/)              // Split by whitespace
+        .filter(word => word.length > 1) // Filter out short words
+        .slice(0, 3);              // Take first 3 meaningful words
+      
+      if (words.length > 0) {
+        const cleanText = words.join('_').toLowerCase();
+        return `${prefix}${element.tagName}_${cleanText}`;
+      }
     }
     
     // Special handling for form elements
@@ -257,6 +266,22 @@ export class DOMMonitor {
     if (['select', 'textarea'].includes(element.tagName)) {
       const key = `${element.tagName}_${element.attributes.name || 'field'}`;
       return `${prefix}${key}`;
+    }
+    
+    // For sections without text, try to get text from children
+    if (element.tagName === 'section' && element.innerText) {
+      // Extract key words from the text
+      const textKey = element.innerText.trim()
+        .replace(/[^\w\s]/gi, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2)
+        .slice(0, 2)
+        .join('_')
+        .toLowerCase();
+      
+      if (textKey.length > 3) {
+        return `${prefix}section_${textKey}`;
+      }
     }
     
     // Final fallback
