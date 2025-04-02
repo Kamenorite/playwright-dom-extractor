@@ -1,0 +1,120 @@
+/* Custom CSS for Playwright DOM Extractor Presentation */
+
+.reveal {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.reveal h1, 
+.reveal h2, 
+.reveal h3 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: none;
+  color: #4CAF50;
+}
+
+.reveal h1 {
+  font-size: 2.5em;
+}
+
+.reveal h2 {
+  font-size: 1.8em;
+}
+
+.reveal h3 {
+  font-size: 1.4em;
+  color: #7986CB;
+}
+
+.reveal li {
+  margin: 10px 0;
+}
+
+.reveal pre {
+  background-color: #2d2d2d;
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  margin: 20px auto;
+}
+
+.reveal code {
+  font-family: 'Courier New', Courier, monospace;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.reveal ul {
+  list-style-type: square;
+}
+
+.reveal ol {
+  margin-left: 2em;
+}
+
+.feature-box {
+  background-color: rgba(76, 175, 80, 0.1);
+  border-left: 4px solid #4CAF50;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 0 5px 5px 0;
+}
+
+.note-box {
+  background-color: rgba(121, 134, 203, 0.1);
+  border-left: 4px solid #7986CB;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 0 5px 5px 0;
+}
+
+.warning-box {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid #FFC107;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 0 5px 5px 0;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.col {
+  flex: 1;
+  padding: 0 15px;
+}
+
+.highlight {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.small-text {
+  font-size: 0.8em;
+}
+
+.demo-card {
+  background-color: #fff;
+  color: #333;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  margin: 15px 0;
+}
+
+.demo-card h3 {
+  margin-top: 0;
+  color: #4CAF50;
+}
+
+.demo-card pre {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.logo {
+  max-height: 100px;
+  margin: 0 auto;
+  display: block;
+} 

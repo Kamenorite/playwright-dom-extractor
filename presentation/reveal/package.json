@@ -1,0 +1,22 @@
+{
+  "name": "playwright-dom-extractor-presentation",
+  "version": "1.0.0",
+  "description": "Presentation for Playwright DOM Extractor",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -o index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "playwright",
+    "dom",
+    "extraction",
+    "presentation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "reveal.js": "^4.5.0",
+    "http-server": "^14.1.1"
+  }
+}

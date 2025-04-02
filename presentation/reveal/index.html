@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playwright DOM Extractor</title>
+  <link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="node_modules/reveal.js/dist/theme/black.css">
+  <link rel="stylesheet" href="node_modules/reveal.js/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="custom.css">
+  <style>
+    .reveal pre {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .reveal img {
+      max-height: 500px;
+      width: auto;
+    }
+    .reveal h1, .reveal h2, .reveal h3 {
+      text-transform: none;
+    }
+    .reveal .container {
+      display: flex;
+    }
+    .reveal .col {
+      flex: 1;
+      padding: 0 10px;
+    }
+    .green-text {
+      color: #4CAF50;
+    }
+    .yellow-text {
+      color: #FFC107;
+    }
+    .red-text {
+      color: #F44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <!-- Title Slide -->
+      <section>
+        <h1>Playwright DOM Extractor</h1>
+        <h3>Automated Web Element Analysis & Test Generation</h3>
+        <p>
+          <small>Created by <a href="https://github.com/Kamenorite">Kamenorite</a></small>
+        </p>
+      </section>
+
+      <!-- Problem Statement -->
+      <section>
+        <h2>The Problem</h2>
+        <ul>
+          <li class="fragment"><strong>Brittle Selectors</strong>: Minor UI changes break tests</li>
+          <li class="fragment"><strong>Manual Effort</strong>: Significant time spent creating/maintaining selectors</li>
+          <li class="fragment"><strong>Inconsistent Naming</strong>: No standardized conventions for element identification</li>
+          <li class="fragment"><strong>AI Integration</strong>: Difficult to leverage AI in test automation workflows</li>
+        </ul>
+      </section>
+
+      <!-- Solution -->
+      <section>
+        <h2>Solution: Playwright DOM Extractor</h2>
+        <ul>
+          <li class="fragment">Automatically extracts DOM elements from web pages</li>
+          <li class="fragment">Generates semantic keys with consistent naming patterns</li>
+          <li class="fragment">Prioritizes data-testid attributes for resilient tests</li>
+          <li class="fragment">Integrates with Cursor AI via Model Context Protocol (MCP)</li>
+          <li class="fragment">Generates HTML reports with suggested Playwright selectors</li>
+        </ul>
+      </section>
+
+      <!-- Key Features -->
+      <section>
+        <h2>Key Features</h2>
+        <div class="container">
+          <div class="col">
+            <ol>
+              <li class="fragment"><strong class="highlight">Semantic Key Generation</strong></li>
+              <li class="fragment"><strong class="highlight">Data-testid Prioritization</strong></li>
+              <li class="fragment"><strong class="highlight">AI Integration via MCP</strong></li>
+            </ol>
+          </div>
+          <div class="col">
+            <ol start="4">
+              <li class="fragment"><strong class="highlight">DOM Element Mapping</strong></li>
+              <li class="fragment"><strong class="highlight">Test Generation</strong></li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Overview -->
+      <section>
+        <h2>Architecture Overview</h2>
+        <pre><code class="language-text">┌─────────────────┐     ┌───────────────┐     ┌────────────────┐
+│                 │     │               │     │                │
+│  DOM Extraction │────▶│  Analysis &   │────▶│  Report        │
+│  (Playwright)   │     │  Key Creation │     │  Generation    │
+│                 │     │               │     │                │
+└─────────────────┘     └───────────────┘     └────────────────┘
+                              │
+                              ▼
+                        ┌─────────────┐
+                        │             │
+                        │  AI Service │
+                        │  (MCP/API)  │
+                        │             │
+                        └─────────────┘</code></pre>
+      </section>
+
+      <!-- data-testid Prioritization -->
+      <section>
+        <h2>data-testid Prioritization</h2>
+        <div class="feature-box">
+          <p>Enhanced reliability by prioritizing attributes designed for testing</p>
+        </div>
+        <div class="container">
+          <div class="col">
+            <h3>Before</h3>
+            <pre><code class="language-html">&lt;button id="submit-btn" class="btn primary"&gt;
+  Submit
+&lt;/button&gt;</code></pre>
+          </div>
+          <div class="col">
+            <h3>After</h3>
+            <pre><code class="language-html">&lt;button id="submit-btn" class="btn primary"
+  data-testid="login_submit_button"&gt;
+  Submit
+&lt;/button&gt;</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Semantic Key Format -->
+      <section>
+        <h2>Semantic Key Format</h2>
+        <div class="note-box">
+          <p>Consistent, meaningful selectors improve test readability and maintenance</p>
+        </div>
+        <pre><code class="language-text">[context]_[action/type]_[description]</code></pre>
+        <p>Examples:</p>
+        <ul>
+          <li><code>login_text_input_username</code></li>
+          <li><code>products_filter_dropdown</code></li>
+          <li><code>checkout_submit_payment</code></li>
+        </ul>
+      </section>
+
+      <!-- Usage: Interactive CLI -->
+      <section>
+        <h2>Usage: Interactive CLI</h2>
+        <pre><code class="language-bash">npm run cli</code></pre>
+        <div class="demo-card">
+          <h3>Interactive Options</h3>
+          <ul>
+            <li>Extract DOM from a URL</li>
+            <li>Generate/enhance semantic keys</li>
+            <li>Create test templates</li>
+            <li>Monitor page changes</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Usage: Direct Commands -->
+      <section>
+        <h2>Usage: Direct Commands</h2>
+        <pre><code class="language-bash"># Extract DOM from a URL with AI-powered key generation
+npm run monitor-page -- --url https://example.com --use-ai
+
+# Generate semantic keys with specific context
+npm run generate-semantic-keys -- --url https://example.com --context profile</code></pre>
+      </section>
+
+      <!-- Using Semantic Keys in Tests -->
+      <section>
+        <h2>Using Semantic Keys in Tests</h2>
+        <pre><code class="language-typescript">import { getSemanticSelector } from '../utils/semantic-helper';
+
+test('Login workflow', async ({ page }) => {
+  await page.goto('https://example.com/login');
+  
+  // Get semantic selectors with data-testid priority
+  const usernameSelector = await getSemanticSelector('login_text_input_username');
+  const passwordSelector = await getSemanticSelector('login_password_input');
+  const submitSelector = await getSemanticSelector('login_submit_button');
+  
+  // Use selectors in test
+  await page.fill(usernameSelector, 'testuser');
+  await page.fill(passwordSelector, 'password123');
+  await page.click(submitSelector);
+});</code></pre>
+      </section>
+
+      <!-- MCP Integration -->
+      <section>
+        <h2>MCP Integration</h2>
+        <div class="feature-box">
+          <p>Direct integration with Cursor AI - no external API keys needed!</p>
+        </div>
+        <pre><code class="language-json">{
+  "server": "cursor-model-context",
+  "provider": "cursor"
+}</code></pre>
+        <ul>
+          <li>Enhanced semantic key generation</li>
+          <li>Context-aware element analysis</li>
+          <li>Improved understanding of page structure</li>
+        </ul>
+      </section>
+
+      <!-- Best Practices -->
+      <section>
+        <h2>Best Practices</h2>
+        <ol>
+          <li class="fragment highlight">Add <code>data-testid</code> attributes to all interactive elements</li>
+          <li class="fragment">Follow the semantic key naming convention</li>
+          <li class="fragment">Group elements by feature/context</li>
+          <li class="fragment">Use consistent naming patterns</li>
+          <li class="fragment">Periodically update semantic keys</li>
+          <li class="fragment">Include in CI/CD pipelines</li>
+        </ol>
+      </section>
+
+      <!-- Demo Time -->
+      <section>
+        <h2>Demo Time!</h2>
+        <div class="demo-card">
+          <h3>Demo Flow</h3>
+          <ol>
+            <li>Basic DOM Extraction</li>
+            <li>AI-Powered Extraction with MCP</li>
+            <li>Data-testid Prioritization</li>
+            <li>Test Creation with Semantic Keys</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Next Steps & Roadmap -->
+      <section>
+        <h2>Next Steps & Roadmap</h2>
+        <ul>
+          <li class="fragment">Enhanced AI-based test generation</li>
+          <li class="fragment">Visual element recognition</li>
+          <li class="fragment">Integration with CI/CD pipelines</li>
+          <li class="fragment">Advanced page monitoring</li>
+          <li class="fragment">Expanded test framework support</li>
+        </ul>
+      </section>
+
+      <!-- Resources -->
+      <section>
+        <h2>Resources</h2>
+        <ul>
+          <li><a href="https://github.com/Kamenorite/playwright-dom-extractor">GitHub Repository</a></li>
+          <li><a href="https://github.com/Kamenorite/playwright-dom-extractor/blob/master/README.md">Documentation</a></li>
+          <li><a href="https://github.com/Kamenorite/playwright-dom-extractor/blob/master/BEST-PRACTICES.md">Best Practices Guide</a></li>
+          <li><a href="https://github.com/Kamenorite/playwright-dom-extractor/blob/master/SEMANTIC-KEYS.md">Semantic Keys Guide</a></li>
+        </ul>
+      </section>
+
+      <!-- Q&A -->
+      <section>
+        <h2>Q&A</h2>
+        <p>Questions?</p>
+        <p><small>Contact: [Your Contact Information]</small></p>
+      </section>
+    </div>
+  </div>
+
+  <script src="node_modules/reveal.js/dist/reveal.js"></script>
+  <script src="node_modules/reveal.js/plugin/notes/notes.js"></script>
+  <script src="node_modules/reveal.js/plugin/markdown/markdown.js"></script>
+  <script src="node_modules/reveal.js/plugin/highlight/highlight.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      slideNumber: true,
+      plugins: [ RevealHighlight, RevealNotes, RevealMarkdown ],
+      transition: 'slide',
+      overview: true,
+      autoPlayMedia: true,
+      backgroundTransition: 'fade'
+    });
+  </script>
+</body>
+</html> 
