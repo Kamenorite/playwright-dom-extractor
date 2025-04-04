@@ -1,15 +1,7 @@
 ---
-name: Generate Semantic Keys
-version: "1.0"
 description: "Generates semantic selectors for web elements for test automation"
-globs:
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "**/*.js"
-  - "**/*.jsx"
-triggers:
-  - command
-  - file_change
+globs: 
+alwaysApply: false
 ---
 
 # Semantic Key Generation

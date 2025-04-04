@@ -1,6 +1,6 @@
-# Smart Semantic Selector System
+# Natural Language Selector System
 
-The Smart Semantic Selector system enhances the traditional selector approach by adding intelligent matching capabilities that make your tests more maintainable and easier to write.
+The Natural Language Selector system enhances the traditional selector approach by adding intelligent matching capabilities that make your tests more maintainable and easier to write.
 
 ## Key Features
 
@@ -10,10 +10,10 @@ Instead of typing the entire semantic key, you can use a partial key:
 
 ```typescript
 // Instead of:
-const element = await getSemanticSelector('login_text_input_username');
+const element = await getByDescription('login_text_input_username');
 
 // You can use:
-const element = await getSemanticSelector('username');
+const element = await getByDescription('username');
 ```
 
 The system will find the best match based on the partial key, taking into account:
@@ -27,9 +27,9 @@ You can describe elements in natural language:
 
 ```typescript
 // These all work to find the login button:
-const loginButton = await getSemanticSelector('login button');
-const loginButton = await getSemanticSelector('submit login');
-const loginButton = await getSemanticSelector('sign in button');
+const loginButton = await getByDescription('login button');
+const loginButton = await getByDescription('submit login');
+const loginButton = await getByDescription('sign in button');
 ```
 
 The system will analyze your description and find the most semantically matching element key.
@@ -41,18 +41,18 @@ The system automatically detects the current page context:
 ```typescript
 // On login page
 await page.goto('https://example.com/login');
-const submitButton = await getSemanticSelector('submit');  // Finds login_button_submit
+const submitButton = await getByDescription('submit');  // Finds login_button_submit
 
 // On profile page 
 await page.goto('https://example.com/profile');
-const submitButton = await getSemanticSelector('submit');  // Finds profile_button_save
+const submitButton = await getByDescription('submit');  // Finds profile_button_save
 ```
 
 You can also specify the context explicitly:
 
 ```typescript
 // Force login context regardless of current page
-const element = await getSemanticSelector('submit', 'login');
+const element = await getByDescription('submit', 'login');
 ```
 
 ### 4. Pattern Matching with Wildcards
@@ -61,10 +61,10 @@ Use wildcards (`*`) to match patterns in semantic keys:
 
 ```typescript
 // Find all buttons in the login context
-const buttons = await getSemanticSelector('login_button_*');
+const buttons = await getByDescription('login_button_*');
 
 // Find all input fields regardless of context
-const inputs = await getSemanticSelector('*_input_*');
+const inputs = await getByDescription('*_input_*');
 ```
 
 ### 5. Automatic Fallback to Smart Matching
@@ -91,15 +91,15 @@ The smart selector system uses a multi-step matching process:
 ### Basic Usage
 
 ```typescript
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getByDescription, getElementByDescription } from '../utils/semantic-helper';
 
 test('Login flow', async ({ page }) => {
   await page.goto('https://example.com/login');
   
   // Smart selectors make the test more readable and maintainable
-  const username = await getSemanticSelector('username');
-  const password = await getSemanticSelector('password');
-  const loginButton = await getSemanticSelector('login button');
+  const username = await getByDescription('username');
+  const password = await getByDescription('password');
+  const loginButton = await getByDescription('login button');
   
   await page.fill(username, 'testuser');
   await page.fill(password, 'password123');
@@ -113,21 +113,21 @@ test('Login flow', async ({ page }) => {
 
 ```typescript
 // With explicit context
-const profileSaveButton = await getSemanticSelector('save', 'profile');
+const profileSaveButton = await getByDescription('save', 'profile');
 
 // With URL-based automatic context
 await page.goto('https://example.com/profile');
-const saveButton = await getSemanticSelector('save');  // Automatically uses profile context
+const saveButton = await getByDescription('save');  // Automatically uses profile context
 ```
 
 ### Element Groups with Wildcards
 
 ```typescript
 // Find all social media links
-const socialLinks = await getSemanticSelector('profile_link_social_*');
+const socialLinks = await getByDescription('profile_link_social_*');
 
 // Find primary navigation items
-const navItems = await getSemanticSelector('header_nav_*');
+const navItems = await getByDescription('header_nav_*');
 ```
 
 ## Best Practices
@@ -150,13 +150,13 @@ If you're having trouble with smart selectors:
 
 ## Try It Out
 
-The simplest way to experience the smart selector system is to run the demo:
+The simplest way to experience the natural language selector system is to run the demo:
 
 ```bash
 npm run semantic-demo
 ```
 
-This will run a test that demonstrates all the features of the smart selector system.
+This will run a test that demonstrates all the features of the natural language selector system.
 
 ## Related Documentation
 

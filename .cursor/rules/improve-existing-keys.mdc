@@ -1,13 +1,7 @@
 ---
-name: Improve Semantic Keys
-version: "1.0"
 description: "Reviews and improves existing semantic keys in mapping files"
-globs:
-  - "**/mappings/*.json"
-  - "**/*.json"
-triggers:
-  - file_open
-  - command
+globs: 
+alwaysApply: false
 ---
 
 # Semantic Key Review and Improvement

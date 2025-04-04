@@ -2,8 +2,16 @@ import minimist from 'minimist';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as glob from 'glob';
-import { CursorAIService } from './services/cursor-ai-service';
+import { MCPService } from './services/mcp-ai-service';
 import { DOMMonitor } from './dom-monitor';
+
+// Cache of processed URLs in the current execution
+const processedUrlCache: Record<string, {
+  timestamp: number;
+  featureName: string;
+  jsonPath: string;
+  htmlPath: string;
+}> = {};
 
 interface SpecFile {
   filePath: string;
@@ -17,6 +25,7 @@ interface SpecFile {
  */
 async function extractUrlsFromSpec(filePath: string): Promise<string[]> {
   const content = fs.readFileSync(filePath, 'utf-8');
+  console.log(`Scanning file for URLs: ${filePath}`);
   
   // Enhanced regex to find more URL patterns
   // Matches both direct strings and template literals
@@ -34,12 +43,19 @@ async function extractUrlsFromSpec(filePath: string): Promise<string[]> {
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(content)) !== null) {
-      const url = match[1];
+      const url = match[1] || match[0]; // Use entire match if group 1 doesn't exist
       // Only add if it's a valid URL and not already in the list
       if (url && !urls.includes(url) && (url.startsWith('http') || url.startsWith('www'))) {
+        console.log(`Found URL: ${url}`);
         urls.push(url);
       }
     }
+  }
+  
+  if (urls.length === 0) {
+    console.log(`No URLs found in file: ${filePath}`);
+  } else {
+    console.log(`Found ${urls.length} URLs in file: ${filePath}`);
   }
   
   return urls;
@@ -80,26 +96,55 @@ async function scanSpecFiles(testsDirectory: string): Promise<SpecFile[]> {
   return results;
 }
 
+// Add a list to track all DOM monitors created
+const activeDOMMonitors: DOMMonitor[] = [];
+
 /**
- * Process a URL and generate semantic mappings, tagged with feature name
+ * Creates sanitized filename from URL and feature name
  */
-async function processUrlForFeature(url: string, featureName: string, outputPath: string, waitTime = 3000, skipScreenshots = false): Promise<void> {
+function createSanitizedFilename(url: string, featureName: string): string {
+  // Remove protocol and special characters
+  const sanitizedUrl = url
+    .replace(/^https?:\/\//, '')
+    .replace(/[\/\?=&]/g, '_')
+    .replace(/[^a-zA-Z0-9_.-]/g, '');
+  
+  return `${featureName.toLowerCase()}_${sanitizedUrl}`;
+}
+
+/**
+ * Process a URL for a feature, extract DOM elements and generate semantic keys
+ */
+async function processUrlForFeature(url: string, featureName: string, outputPath: string, waitTime: number, skipScreenshots: boolean): Promise<void> {
   console.log(`Processing ${url} for feature "${featureName}"...`);
   
+  // Check if this URL was already processed in this execution
+  const cacheKey = `${url}_${featureName}`;
+  const now = Date.now();
+  const sanitizedFilename = createSanitizedFilename(url, featureName);
+  const jsonPath = path.join(outputPath, `${sanitizedFilename}.json`);
+  const htmlPath = path.join(outputPath, `${sanitizedFilename}.html`);
+  
+  if (processedUrlCache[cacheKey]) {
+    console.log(`Using cached result for ${url} with feature "${featureName}" from current execution`);
+    console.log(`- JSON: ${processedUrlCache[cacheKey].jsonPath}`);
+    console.log(`- HTML: ${processedUrlCache[cacheKey].htmlPath}`);
+    console.log(`Completed processing URL: ${url}`);
+    return;
+  }
+  
+  // Create DOM Monitor
+  const domMonitor = new DOMMonitor({
+    outputPath,
+    waitTimeout: waitTime,
+    featureName
+  });
+  
+  // Track this monitor for cleanup
+  activeDOMMonitors.push(domMonitor);
+  
   try {
-    // Use the enhanced CursorAIService for better semantic key generation
-    const aiService = new CursorAIService({
-      mcpEnabled: true,
-      useAI: true
-    });
-    
-    const domMonitor = new DOMMonitor({
-      useAI: true,
-      aiService,
-      outputPath,
-      waitTimeout: waitTime
-    });
-    
+    // Initialize browser and navigate to URL
     await domMonitor.init();
     await domMonitor.navigateTo(url);
     
@@ -111,24 +156,45 @@ async function processUrlForFeature(url: string, featureName: string, outputPath
       console.log('Wait timeout, continuing anyway');
     }
     
+    // Extract and process DOM elements
     console.log('Extracting DOM elements...');
     let elements = await domMonitor.extractDOMElements();
     
-    console.log('Generating semantic keys...');
+    console.log('Generating semantic keys with MCP...');
     elements = await domMonitor.generateSemanticKeys(elements);
     
+    // Save reports
     const reports = await domMonitor.saveReport(url, elements);
     console.log(`Reports saved:`);
     console.log(`- JSON: ${reports.jsonPath}`);
     console.log(`- HTML: ${reports.htmlPath}`);
     
-    // Take a screenshot for reference, if not disabled
-    await domMonitor.takeScreenshot(path.join(outputPath, `${featureName.toLowerCase()}_screenshot.png`), true, skipScreenshots);
+    // Take a screenshot for reference
+    if (!skipScreenshots) {
+      await domMonitor.takeScreenshot(path.join(outputPath, `${sanitizedFilename}_screenshot.png`), true, skipScreenshots);
+    }
     
+    // Cache this URL processing for the current execution
+    processedUrlCache[cacheKey] = {
+      timestamp: now,
+      featureName,
+      jsonPath: reports.jsonPath,
+      htmlPath: reports.htmlPath
+    };
+    
+    // Close this browser instance
     await domMonitor.close();
+    
+    console.log(`Completed processing URL: ${url}`);
   } catch (error) {
     console.error(`Error processing ${url} for feature "${featureName}":`, error);
-    console.log('Continuing with next URL...');
+    // Try to close the browser even if there was an error
+    try {
+      await domMonitor.close();
+    } catch (closeError) {
+      console.error('Error closing browser:', closeError);
+    }
+    throw error;
   }
 }
 
@@ -137,20 +203,29 @@ async function processUrlForFeature(url: string, featureName: string, outputPath
  */
 async function processUrl(url: string, outputPath: string, waitTime = 3000, skipScreenshots = false): Promise<void> {
   console.log(`Processing ${url}...`);
+
+  // Use a generic feature name for direct URL processing
+  const genericFeature = 'DirectScan';
+  const cacheKey = `${url}_${genericFeature}`;
+  const sanitizedFilename = createSanitizedFilename(url, genericFeature);
+  
+  // Check if this URL was already processed in this execution
+  if (processedUrlCache[cacheKey]) {
+    console.log(`Using cached result for ${url} from current execution`);
+    console.log(`- JSON: ${processedUrlCache[cacheKey].jsonPath}`);
+    console.log(`- HTML: ${processedUrlCache[cacheKey].htmlPath}`);
+    console.log(`Completed processing URL: ${url}`);
+    return;
+  }
   
   try {
-    // Use the enhanced CursorAIService for better semantic key generation
-    const aiService = new CursorAIService({
-      mcpEnabled: true,
-      useAI: true
-    });
-    
     const domMonitor = new DOMMonitor({
-      useAI: true,
-      aiService,
       outputPath,
       waitTimeout: waitTime
     });
+    
+    // Add to active monitors for cleanup
+    activeDOMMonitors.push(domMonitor);
     
     await domMonitor.init();
     await domMonitor.navigateTo(url);
@@ -168,7 +243,7 @@ async function processUrl(url: string, outputPath: string, waitTime = 3000, skip
     console.log('Extracting DOM elements...');
     let elements = await domMonitor.extractDOMElements();
     
-    console.log('Generating semantic keys...');
+    console.log('Generating semantic keys with MCP...');
     elements = await domMonitor.generateSemanticKeys(elements);
     
     const reports = await domMonitor.saveReport(url, elements);
@@ -177,7 +252,15 @@ async function processUrl(url: string, outputPath: string, waitTime = 3000, skip
     console.log(`- HTML: ${reports.htmlPath}`);
     
     // Take a screenshot for reference using the new public method, if not disabled
-    await domMonitor.takeScreenshot(path.join(outputPath, `page_screenshot.png`), true, skipScreenshots);
+    await domMonitor.takeScreenshot(path.join(outputPath, `${sanitizedFilename}_screenshot.png`), true, skipScreenshots);
+    
+    // Cache this URL processing
+    processedUrlCache[cacheKey] = {
+      timestamp: Date.now(),
+      featureName: genericFeature,
+      jsonPath: reports.jsonPath,
+      htmlPath: reports.htmlPath
+    };
     
     await domMonitor.close();
   } catch (error) {
@@ -226,21 +309,62 @@ async function main() {
   
   console.log(`Found ${specFiles.length} spec files`);
   
-  // Process each URL found in spec files
-  let processedUrls = 0;
-  for (const specFile of specFiles) {
-    console.log(`\nProcessing spec file: ${specFile.fileName}`);
-    console.log(`Feature name: ${specFile.featureName}`);
-    console.log(`URLs found: ${specFile.urls.length}`);
+  try {
+    // Process each URL found in spec files
+    let processedUrls = 0;
+    let failedUrls = 0;
     
-    for (const url of specFile.urls) {
-      await processUrlForFeature(url, specFile.featureName, outputPath, waitTime, skipScreenshots);
-      processedUrls++;
+    for (const specFile of specFiles) {
+      console.log(`\nProcessing spec file: ${specFile.fileName}`);
+      console.log(`Feature name: ${specFile.featureName}`);
+      console.log(`URLs found: ${specFile.urls.length}`);
+      
+      if (specFile.urls.length === 0) {
+        console.log('No URLs found in this spec file, skipping...');
+        continue;
+      }
+      
+      // Process each URL in the spec file
+      for (const url of specFile.urls) {
+        try {
+          console.log(`\nProcessing URL (${processedUrls + 1}/${specFile.urls.length}): ${url}`);
+          await processUrlForFeature(url, specFile.featureName, outputPath, waitTime, skipScreenshots);
+          processedUrls++;
+        } catch (error) {
+          failedUrls++;
+          console.error(`Failed to process URL: ${url}`, error);
+          console.log('Continuing with next URL...');
+        }
+      }
     }
+    
+    console.log(`\nProcessed ${processedUrls} URLs successfully from ${specFiles.length} spec files`);
+    if (failedUrls > 0) {
+      console.log(`Failed to process ${failedUrls} URLs`);
+    }
+    console.log('Done!');
+  } catch (error) {
+    console.error('Error during processing:', error);
+  } finally {
+    // Ensure all browser instances are closed
+    console.log('Cleaning up all browser instances...');
+    const closePromises = activeDOMMonitors.map(async (monitor) => {
+      try {
+        await monitor.close();
+      } catch (error) {
+        console.error('Error closing browser instance:', error);
+      }
+    });
+    
+    await Promise.all(closePromises);
+    console.log('All cleanup complete. Exiting...');
+    
+    // Force exit after a short delay if needed
+    setTimeout(() => {
+      console.log('Forcing exit...');
+      process.exit(0);
+    }, 1000);
   }
-  
-  console.log(`\nProcessed ${processedUrls} URLs from ${specFiles.length} spec files`);
-  console.log('Done!');
 }
 
 main().catch(error => {

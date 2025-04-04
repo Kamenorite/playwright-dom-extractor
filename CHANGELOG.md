@@ -1,8 +1,27 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
 ## [Unreleased]
 
 ### Added
+- Support for natural language descriptions using `getByDescription` and `getElementByDescription`
+- Ambiguity detection in element selection to prevent non-unique matches
+- Interactive feedback suggesting more specific alternatives when ambiguity is detected
+- New demo script to showcase ambiguity detection (`examples/ambiguity-detection-demo.ts`)
+- Updated documentation with best practices for handling element ambiguity
+- Natural language description matching for element selection
+- Alternative names for elements to improve matching flexibility
+- getElementByDescription and getByDescription functions
+- Migration documentation from semantic selectors to natural language
+- Implementation status document
+
+### Deprecated
+- `getSemanticSelector` and `getSelfHealingLocator` in favor of the new natural language-based functions
+- getSemanticSelector function (use getElementByDescription instead)
+- getSelfHealingLocator function (use getByDescription instead)
+- updateSelectorForKey function (no longer needed with new approach)
+
 - MCP integration for direct Cursor AI access without API tokens
 - MCPAIService that leverages Cursor's Model Context Protocol
 - Comprehensive integration test suite

@@ -72,14 +72,14 @@ MCP-generated: `login_button_submit`
 To use these keys in your tests:
 
 ```typescript
-import { getSemanticSelector } from './utils/semantic-helper';
+import { getByDescription } from './utils/semantic-helper';
 
 // Get a selector from an exact semantic key
-const selector = await getSemanticSelector('login_button_submit');
+const selector = await getByDescription('login_button_submit');
 
 // Or use smart matching with MCP-generated keys
-const loginButton = await getSemanticSelector('login button');
-const submitButton = await getSemanticSelector('submit');
+const loginButton = await getByDescription('login button');
+const submitButton = await getByDescription('submit');
 ```
 
 For more details on using smart semantic selectors, see [SMART-SELECTOR.md](SMART-SELECTOR.md).

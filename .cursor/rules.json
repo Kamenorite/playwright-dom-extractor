@@ -24,16 +24,16 @@
     },
     {
       "name": "Import Semantic Helper",
-      "pattern": "import\\s+\\{\\s*test,\\s*expect\\s*\\}\\s+from\\s+[\"']@playwright\\/test[\"'];\\s*(?!import\\s+\\{\\s*getSemanticSelector)",
+      "pattern": "import\\s+\\{\\s*test,\\s*expect\\s*\\}\\s+from\\s+[\"']@playwright\\/test[\"'];\\s*(?!import\\s+\\{\\s*getByDescription)",
       "description": "Suggests importing semantic helper when writing Playwright tests",
-      "message": "Consider importing getSemanticSelector for better test maintainability",
+      "message": "Consider importing getByDescription for better test maintainability",
       "severity": "suggestion",
       "languages": ["typescript"],
       "filePattern": "**/*.spec.ts",
       "actions": [
         {
           "name": "Add Semantic Helper Import",
-          "apply": "function apply(match) {\n  return `${match[0]}\\nimport { getSemanticSelector } from '../utils/semantic-helper';`;\n}"
+          "apply": "function apply(match) {\n  return `${match[0]}\\nimport { getByDescription } from '../utils/semantic-helper';`;\n}"
         }
       ]
     },

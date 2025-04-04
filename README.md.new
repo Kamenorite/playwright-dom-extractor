@@ -1,0 +1,5 @@
+# Playwright DOM Extractor
+A powerful tool for extracting DOM elements from web pages, generating semantic keys, and creating maintainable Playwright tests using natural language descriptions.
+
+## Important: Deprecation Notice
+

@@ -140,26 +140,26 @@ The generated mappings will primarily use data-testid attributes when available.
 
 ### Writing Tests with Semantic Selectors
 
-In your Playwright tests, use the `getSemanticSelector` function to benefit from data-testid prioritization:
+In your Playwright tests, use the `getByDescription` function to benefit from data-testid prioritization:
 
 ```typescript
 import { test, expect } from '@playwright/test';
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getByDescription } from '../utils/semantic-helper';
 
 test('User can log in', async ({ page }) => {
   await page.goto('https://example.com/login');
   
   // These will use data-testid selectors if available
-  const usernameSelector = await getSemanticSelector('login_text_input_username');
-  const passwordSelector = await getSemanticSelector('login_password_input');
-  const submitSelector = await getSemanticSelector('login_submit_button');
+  const usernameSelector = await getByDescription('login_text_input_username');
+  const passwordSelector = await getByDescription('login_password_input');
+  const submitSelector = await getByDescription('login_submit_button');
   
   await page.fill(usernameSelector, 'testuser');
   await page.fill(passwordSelector, 'password123');
   await page.click(submitSelector);
   
   // Assertion
-  const welcomeText = await getSemanticSelector('dashboard_heading_welcome');
+  const welcomeText = await getByDescription('dashboard_heading_welcome');
   await expect(page.locator(welcomeText)).toBeVisible();
 });
 ```
@@ -245,5 +245,56 @@ Incorporate data-testid checks into your CI/CD pipeline:
 - [SEMANTIC-KEYS.md](SEMANTIC-KEYS.md): Comprehensive guide to semantic key conventions
 - [SMART-SELECTOR.md](SMART-SELECTOR.md): Using the smart selector system for more readable tests
 - [MCP-INTEGRATION.md](MCP-INTEGRATION.md): Using Cursor AI to help identify and generate semantic selectors
+
+## Element Selection Best Practices
+
+### Use Natural Language Descriptions
+
+When selecting elements on a page, prefer using natural language descriptions with the `getByDescription` function. It provides a more maintainable and resilient approach than standard CSS or XPath selectors. For example:
+
+```typescript
+// ✅ Good - natural language description
+const searchButton = await getByDescription(page, 'search button');
+
+// ❌ Avoid - brittle selectors
+const searchButton = page.locator('#search-btn');
+```
+
+### Handling Ambiguous Element Matches
+
+The natural language description matcher now includes ambiguity detection that provides feedback when a description might match multiple elements with similar relevance scores. The system will:
+
+1. Warn you when a description matches multiple elements with similar scores
+2. Suggest more specific alternative names to try based on available element metadata
+3. Show which features the ambiguous elements belong to, so you can scope your selection
+
+When ambiguity is detected and elements belong to different features, you may receive an error requiring feature specification. This helps ensure that your tests are selecting the exact elements you intend.
+
+```typescript
+// When ambiguity exists between features, specify the feature
+const submitButton = await getByDescription(page, 'submit button', 'checkout');
+```
+
+You can see this in action by running the ambiguity detection demo:
+
+```bash
+ts-node examples/ambiguity-detection-demo.ts
+```
+
+### Be Specific in Element Descriptions
+
+More specific descriptions lead to more accurate element matching. For best results:
+
+- Include the element type (button, input, etc.) in your description
+- Add contextual information when available (e.g., "login form submit button")
+- Use exact text content when it's distinctive (e.g., "accept cookies button")
+
+```typescript
+// ✅ Better - more specific description
+const loginButton = await getByDescription(page, 'login form submit button');
+
+// ❌ Less specific, may lead to ambiguity
+const button = await getByDescription(page, 'submit button');
+```
 
 By following these best practices, you'll maximize the effectiveness of the Playwright DOM Extractor's data-testid prioritization feature and make your tests more robust and maintainable. 

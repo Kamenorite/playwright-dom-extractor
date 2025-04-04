@@ -6,14 +6,14 @@ This directory contains example files and demonstrations for the Playwright DOM 
 
 - **dom-extraction-demo.js**: Demonstrates the basic DOM extraction functionality
 - **mcp-integration-demo.js**: Shows how to integrate with Cursor MCP for AI-powered key generation
-- **essential-demo.spec.ts**: Demonstrates the smart semantic selector system in a test context
+- **essential-demo.spec.ts**: Demonstrates the natural language selector system in a test context
 
 ## Additional Demos & Tools
 
-- **show-smart-selector-demo.ts**: Interactive demonstration of the smart selector capabilities
-- **run-smart-selector-demo.js**: Runner script for the smart selector demo
-- **test-smart-selector.js**: Simple test script for the semantic key functionality
-- **test-ts-smart-selector.ts**: TypeScript version of the semantic key test
+- **show-natural-language-selector-demo.ts**: Interactive demonstration of the smart selector capabilities
+- **run-natural-language-selector-demo.js**: Runner script for the smart selector demo
+- **test-natural-language-selector.js**: Simple test script for the semantic key functionality
+- **test-ts-natural-language-selector.ts**: TypeScript version of the semantic key test
 
 ## Test Data
 
@@ -39,7 +39,7 @@ npm run mcp-demo
 npm run semantic-demo
 
 # Run the smart selector interactive demo
-node --loader ts-node/esm examples/run-smart-selector-demo.js
+node --loader ts-node/esm examples/run-natural-language-selector-demo.js
 ```
 
 These examples demonstrate the core functionality of the Playwright DOM Extractor project and how to use it in different scenarios. 

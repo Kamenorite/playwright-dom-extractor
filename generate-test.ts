@@ -88,13 +88,13 @@ async function generateTest(
       
       Please generate a complete Playwright test file that implements the manual test.
       Use the semantic selectors from the mappings where possible.
-      Import from '../utils/semantic-helper' to use the getSemanticSelector() function.
+      Import from '../utils/semantic-helper' to use the getElementByDescription() function.
       Follow best practices for Playwright tests, including waiting for elements and assertions.
       The test should be in TypeScript and follow this structure:
       
       \`\`\`typescript
       import { test, expect } from '@playwright/test';
-      import { getSemanticSelector } from '../utils/semantic-helper';
+      import { getElementByDescription } from '../utils/semantic-helper';
       
       test('${featureName} - test description', async ({ page }) => {
         // Test steps here
@@ -141,7 +141,7 @@ async function generateTestWithAI(prompt: string, aiService: AIService): Promise
       // Returning a placeholder test - in reality, this would come from the AI service
       return `
 import { test, expect } from '@playwright/test';
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getElementByDescription } from '../utils/semantic-helper';
 
 /**
  * This test was automatically generated from manual test instructions.
@@ -152,7 +152,7 @@ test('${prompt.match(/test\('([^']+)'/)?.[1] || "Placeholder Test"}', async ({ p
   await page.goto('https://example.com');
   
   // Example of using semantic selectors
-  const loginButton = await getSemanticSelector('login_button');
+  const loginButton = await getElementByDescription('login_button');
   await page.locator(loginButton).click();
   
   // Add more steps based on the manual test...
@@ -180,7 +180,7 @@ test('${prompt.match(/test\('([^']+)'/)?.[1] || "Placeholder Test"}', async ({ p
   
   return `
 import { test, expect } from '@playwright/test';
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getElementByDescription } from '../utils/semantic-helper';
 
 /**
  * This test was automatically generated from manual test instructions.

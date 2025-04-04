@@ -37,7 +37,7 @@ When generating tests, follow this structured approach:
 
 ```typescript
 import { test, expect } from '@playwright/test';
-import { getSemanticSelector, generateSemanticKeysForPage } from '../utils/semantic-helper';
+import { getByDescription, generateSemanticKeysForPage } from '../utils/semantic-helper';
 
 test.describe('Feature: [Feature Name]', () => {
   // Optional: Generate mapping file setup
@@ -50,11 +50,11 @@ test.describe('Feature: [Feature Name]', () => {
     await page.goto('[URL]');
     
     // 2. Interact with elements using semantic selectors
-    const elementSelector = await getSemanticSelector('[semantic_key]');
+    const elementSelector = await getByDescription('[semantic_key]');
     await page.locator(elementSelector).click();
     
     // 3. Verify expected outcomes
-    await expect(page.locator(await getSemanticSelector('[result_element]'))).toBeVisible();
+    await expect(page.locator(await getByDescription('[result_element]'))).toBeVisible();
   });
 });
 ```
@@ -98,11 +98,11 @@ test('user can log in', async ({ page }) => {
   await page.goto('https://example.com/login');
   
   // Using semantic selectors for better maintainability
-  await page.fill(await getSemanticSelector('login_text_input_username'), 'testuser');
-  await page.fill(await getSemanticSelector('login_password_input'), 'password123');
-  await page.click(await getSemanticSelector('login_button_submit'));
+  await page.fill(await getByDescription('login_text_input_username'), 'testuser');
+  await page.fill(await getByDescription('login_password_input'), 'password123');
+  await page.click(await getByDescription('login_button_submit'));
   
-  await expect(page.locator(await getSemanticSelector('dashboard_heading_title'))).toBeVisible();
+  await expect(page.locator(await getByDescription('dashboard_heading_title'))).toBeVisible();
 });
 ```
 
@@ -112,16 +112,16 @@ The semantic selector system supports smart matching, allowing for more natural,
 
 ```typescript
 // Instead of requiring exact semantic keys:
-const usernameField = await page.locator(await getSemanticSelector('login_text_input_username'));
+const usernameField = await page.locator(await getByDescription('login_text_input_username'));
 
 // You can use partial keys:
-const usernameField = await page.locator(await getSemanticSelector('username'));
+const usernameField = await page.locator(await getByDescription('username'));
 
 // Or natural language descriptions:
-const usernameField = await page.locator(await getSemanticSelector('username field'));
+const usernameField = await page.locator(await getByDescription('username field'));
 
 // Context-aware matching:
-const saveButton = await page.locator(await getSemanticSelector('save', 'profile'));
+const saveButton = await page.locator(await getByDescription('save', 'profile'));
 ```
 
 ## 4. Testing Patterns (TEST_PATTERNS)
@@ -139,12 +139,12 @@ test('user can log in with valid credentials', async ({ page }) => {
   // await generateSemanticKeysForPage(page, 'login');
   
   // Fill login form using semantic selectors
-  await page.fill(await getSemanticSelector('username'), 'testuser');
-  await page.fill(await getSemanticSelector('password'), 'password123');
-  await page.click(await getSemanticSelector('sign in button'));
+  await page.fill(await getByDescription('username'), 'testuser');
+  await page.fill(await getByDescription('password'), 'password123');
+  await page.click(await getByDescription('sign in button'));
   
   // Verify successful login
-  await expect(page.locator(await getSemanticSelector('welcome message'))).toBeVisible();
+  await expect(page.locator(await getByDescription('welcome message'))).toBeVisible();
 });
 ```
 
@@ -154,13 +154,13 @@ test('user can submit a contact form', async ({ page }) => {
   await page.goto('https://example.com/contact');
   
   // Fill form fields
-  await page.fill(await getSemanticSelector('name field'), 'Test User');
-  await page.fill(await getSemanticSelector('email field'), 'test@example.com');
-  await page.fill(await getSemanticSelector('message'), 'This is a test message');
-  await page.click(await getSemanticSelector('submit button'));
+  await page.fill(await getByDescription('name field'), 'Test User');
+  await page.fill(await getByDescription('email field'), 'test@example.com');
+  await page.fill(await getByDescription('message'), 'This is a test message');
+  await page.click(await getByDescription('submit button'));
   
   // Verify submission
-  await expect(page.locator(await getSemanticSelector('success message'))).toBeVisible();
+  await expect(page.locator(await getByDescription('success message'))).toBeVisible();
 });
 ```
 
@@ -174,14 +174,14 @@ const testCases = [
 for (const { username, password, expected } of testCases) {
   test(`Login with ${username} should ${expected}`, async ({ page }) => {
     await page.goto('https://example.com/login');
-    await page.fill(await getSemanticSelector('username'), username);
-    await page.fill(await getSemanticSelector('password'), password);
-    await page.click(await getSemanticSelector('login button'));
+    await page.fill(await getByDescription('username'), username);
+    await page.fill(await getByDescription('password'), password);
+    await page.click(await getByDescription('login button'));
     
     if (expected === 'success') {
-      await expect(page.locator(await getSemanticSelector('dashboard'))).toBeVisible();
+      await expect(page.locator(await getByDescription('dashboard'))).toBeVisible();
     } else {
-      await expect(page.locator(await getSemanticSelector('error message'))).toBeVisible();
+      await expect(page.locator(await getByDescription('error message'))).toBeVisible();
     }
   });
 }

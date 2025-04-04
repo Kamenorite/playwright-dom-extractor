@@ -5,8 +5,12 @@ import fs from 'fs';
 import path from 'path';
 import ora from 'ora';
 import { DOMMonitor } from './dom-monitor';
-import { MCPAIService } from './services/mcp-ai-service';
-import { AIService } from './services/ai-service';
+import { MCPService } from './services/mcp-ai-service';
+import { promisify } from 'util';
+import { exec as execCallback } from 'child_process';
+
+// Promisify the exec function
+const exec = promisify(execCallback);
 
 // ASCII art banner
 const banner = `
@@ -32,209 +36,166 @@ const hasMcpConfig = fs.existsSync(path.join(process.cwd(), '.cursor/mcp.json'))
  * Main function to run the interactive CLI
  */
 async function main() {
+  displayHeader();
+  
+  // Check if MCP configuration is available
+  const mcpConfigured = true;
+  
+  if (!mcpConfigured) {
+    console.log(chalk.red('Error: MCP configuration not found.'));
+    console.log('This tool requires Cursor for access to the MCP service.');
+    console.log('Please run this tool within Cursor.');
+    process.exit(1);
+  }
+  
+  let exitRequested = false;
+  
+  while (!exitRequested) {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: 'Extract semantic keys from a single URL', value: 'extract-url' },
+          { name: 'Scan Playwright spec files for semantic mapping', value: 'scan-specs' },
+          { name: 'View available semantic mappings', value: 'view-mappings' },
+          { name: 'Help', value: 'help' },
+          { name: 'Exit', value: 'exit' }
+        ]
+      }
+    ]);
+    
+    switch (answers.action) {
+      case 'extract-url':
+        await extractFromURL();
+        break;
+      case 'scan-specs':
+        await scanSpecs();
+        break;
+      case 'view-mappings':
+        await viewMappings();
+        break;
+      case 'help':
+        showHelp();
+        break;
+      case 'exit':
+        console.log(chalk.green('Goodbye!'));
+        exitRequested = true;
+        // Force exit after a short delay to ensure all processes are done
+        setTimeout(() => {
+          process.exit(0);
+        }, 500);
+        break;
+    }
+  }
+}
+
+/**
+ * Display the CLI header with banner and title
+ */
+function displayHeader() {
   console.log(chalk.cyan(banner));
   console.log(chalk.yellow('Interactive CLI for Playwright DOM Extractor'));
   console.log(chalk.dim('----------------------------------------'));
   console.log('');
-
-  // Main menu
-  const { action } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'action',
-      message: 'What would you like to do?',
-      choices: [
-        { name: '🔍 Extract DOM from a URL', value: 'extract-dom' },
-        { name: '📝 Scan Playwright Test Files', value: 'scan-specs' },
-        { name: '🔄 Update Semantic Mappings', value: 'update-mappings' },
-        { name: '🤖 Configure AI Settings', value: 'configure-ai' },
-        { name: '📊 View Available Mappings', value: 'view-mappings' },
-        { name: '❓ Help & Documentation', value: 'help' },
-        { name: '❌ Exit', value: 'exit' }
-      ]
-    }
-  ]);
-
-  switch (action) {
-    case 'extract-dom':
-      await extractDom();
-      break;
-    case 'scan-specs':
-      await scanSpecs();
-      break;
-    case 'update-mappings':
-      await updateMappings();
-      break;
-    case 'configure-ai':
-      await configureAI();
-      break;
-    case 'view-mappings':
-      await viewMappings();
-      break;
-    case 'help':
-      showHelp();
-      break;
-    case 'exit':
-      console.log(chalk.green('👋 Goodbye!'));
-      process.exit(0);
-      break;
-  }
-
-  // Ask if the user wants to perform another action
-  const { continueAction } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'continueAction',
-      message: 'Would you like to perform another action?',
-      default: true
-    }
-  ]);
-
-  if (continueAction) {
-    await main();
-  } else {
-    console.log(chalk.green('👋 Goodbye!'));
-    process.exit(0);
-  }
 }
 
 /**
  * Extract DOM from a URL
  */
-async function extractDom() {
-  console.log(chalk.cyan('\n🔍 Extract DOM Elements from a URL'));
-  console.log(chalk.dim('----------------------------------------'));
-
+async function extractFromURL() {
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'url',
-      message: 'Enter the URL to analyze:',
-      validate: (input: string) => input.trim() !== '' ? true : 'URL is required'
-    },
-    {
-      type: 'list',
-      name: 'aiOption',
-      message: 'How would you like to generate semantic keys?',
-      choices: [
-        { name: 'Basic (Rule-based)', value: 'basic' },
-        { name: 'AI-powered (via MCP)' + (hasMcpConfig ? ' ✅' : ' ⚠️'), value: 'ai-mcp', disabled: !hasMcpConfig },
-        { name: 'AI-powered (via API Keys)', value: 'ai-api' }
-      ]
+      message: 'Enter the URL to extract DOM elements from:',
+      validate: (input) => {
+        if (!input) return 'URL is required';
+        if (!input.startsWith('http')) return 'URL must start with http:// or https://';
+        return true;
+      }
     },
     {
       type: 'input',
       name: 'outputPath',
-      message: 'Output directory:',
+      message: 'Enter the output path for mappings:',
       default: './mappings'
     },
     {
       type: 'input',
       name: 'featureName',
-      message: 'Feature name (optional, for better organization):',
-    },
-    {
-      type: 'confirm',
-      name: 'takeScreenshot',
-      message: 'Take screenshot of the page?',
-      default: true
-    },
-    {
-      type: 'input',
-      name: 'waitSelector',
-      message: 'Wait for selector (optional):',
-    },
-    {
-      type: 'number',
-      name: 'timeout',
-      message: 'Wait timeout (ms):',
-      default: 5000
+      message: 'Enter a feature name (optional, used for file organization):',
+      default: ''
     }
   ]);
 
-  // Configure AI options
-  const useAI = answers.aiOption !== 'basic';
-  const useMCP = answers.aiOption === 'ai-mcp';
-  
-  let aiService;
-  if (useAI) {
-    if (useMCP) {
-      console.log(chalk.green('\n✅ Using Cursor MCP for AI capabilities (no external API key needed)'));
-      aiService = new MCPAIService({ useMCP: true });
-    } else {
-      console.log(chalk.yellow('\nUsing external AI API - checking for API keys...'));
-      aiService = new AIService({
-        apiKey: process.env.AI_API_KEY,
-        endpoint: process.env.AI_API_ENDPOINT
-      });
-    }
+  if (!fs.existsSync(answers.outputPath)) {
+    fs.mkdirSync(answers.outputPath, { recursive: true });
   }
 
-  // Initialize spinner
-  const spinner = ora('Initializing...').start();
+  const spinner = ora('Analyzing page and extracting DOM elements...').start();
 
   try {
-    // Create DOMMonitor instance
-    const monitor = new DOMMonitor({
-      useAI,
-      useMCP,
-      aiService,
-      outputPath: answers.outputPath,
-      waitForSelector: answers.waitSelector || undefined,
-      waitTimeout: answers.timeout,
-      featureName: answers.featureName || undefined
-    });
-
-    spinner.text = 'Launching browser...';
-    await monitor.init();
-
-    spinner.text = `Navigating to ${answers.url}...`;
-    await monitor.navigateTo(answers.url);
-
-    spinner.text = 'Extracting DOM elements...';
-    let elements = await monitor.extractDOMElements();
+    let command = `node dist/process-single-url.js --url="${answers.url}" --output-path="${answers.outputPath}"`;
     
-    spinner.text = 'Generating semantic keys...';
-    elements = await monitor.generateSemanticKeys(elements);
-    
-    spinner.text = 'Saving reports...';
-    const reports = await monitor.saveReport(answers.url, elements);
-    
-    // Take screenshot if enabled
-    if (answers.takeScreenshot) {
-      spinner.text = 'Taking screenshot...';
-      
-      // Extract base filename from URL for screenshot
-      const urlObj = new URL(answers.url);
-      const hostname = urlObj.hostname.replace(/\./g, '_');
-      const pathname = urlObj.pathname.replace(/\//g, '_');
-      const screenshotPath = path.join(answers.outputPath, `${hostname}${pathname}.png`);
-      
-      await monitor.takeScreenshot(screenshotPath, true);
+    if (answers.featureName) {
+      command += ` --feature-name="${answers.featureName}"`;
     }
     
-    await monitor.close();
+    spinner.text = 'Launching browser and analyzing page...';
     
-    spinner.succeed('Done!');
+    console.log(`\nRunning command: ${command}`);
     
-    // Show summary
-    console.log('\n' + chalk.green('✅ Extraction completed successfully!'));
-    console.log(`\nExtracted ${chalk.yellow(elements.length)} elements from ${chalk.blue(answers.url)}`);
-    console.log(`\nReports saved to:`);
-    console.log(`  - JSON: ${chalk.yellow(reports.jsonPath)}`);
-    console.log(`  - HTML: ${chalk.yellow(reports.htmlPath)}`);
+    const { stdout, stderr } = await exec(command);
     
-    if (answers.takeScreenshot) {
-      const urlObj = new URL(answers.url);
-      const hostname = urlObj.hostname.replace(/\./g, '_');
-      const pathname = urlObj.pathname.replace(/\//g, '_');
-      const screenshotPath = path.join(answers.outputPath, `${hostname}${pathname}.png`);
-      console.log(`  - Screenshot: ${chalk.yellow(screenshotPath)}`);
+    spinner.succeed('DOM extraction completed!');
+    
+    // Display the output or open the reports
+    console.log(chalk.green('\nResults:'));
+    console.log(stdout);
+    
+    if (stderr) {
+      console.log(chalk.yellow('\nWarnings/Errors:'));
+      console.log(stderr);
     }
     
+    // Ask if the user wants to view the HTML report
+    const { viewReport } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'viewReport',
+        message: 'Would you like to open the HTML report?',
+        default: true
+      }
+    ]);
+    
+    if (viewReport) {
+      // Find the most recently created HTML file in the output directory
+      const files = fs.readdirSync(answers.outputPath)
+        .filter(file => file.endsWith('.html'))
+        .map(file => ({
+          name: file,
+          path: path.join(answers.outputPath, file),
+          time: fs.statSync(path.join(answers.outputPath, file)).mtime.getTime()
+        }))
+        .sort((a, b) => b.time - a.time);
+      
+      if (files.length > 0) {
+        const htmlReportPath = files[0].path;
+        console.log(chalk.green(`Opening HTML report: ${htmlReportPath}`));
+        
+        // Open the HTML file in the default browser
+        const openCommand = process.platform === 'win32' ? 'start' : 
+                            process.platform === 'darwin' ? 'open' : 'xdg-open';
+        await exec(`${openCommand} "${htmlReportPath}"`);
+      } else {
+        console.log(chalk.yellow('No HTML report found.'));
+      }
+    }
   } catch (error: any) {
-    spinner.fail('Error occurred');
-    console.error(chalk.red(`\n❌ Error: ${error.message}`));
+    spinner.fail('Error during DOM extraction');
+    console.error(chalk.red('Error:'), error.message);
   }
 }
 
@@ -244,6 +205,29 @@ async function extractDom() {
 async function scanSpecs() {
   console.log(chalk.cyan('\n📝 Scan Playwright Test Files'));
   console.log(chalk.dim('----------------------------------------'));
+
+  if (!hasMcpConfig) {
+    console.log(chalk.yellow('\n⚠️ MCP configuration not found at: .cursor/mcp.json'));
+    console.log('This tool requires Cursor MCP to function properly.');
+    console.log('Please create a .cursor/mcp.json file with the following content:');
+    console.log(chalk.gray(`
+{
+  "mcp_server": "https://api.cursor.sh",
+  "cursor_use_internal": true,
+  "ai": {
+    "provider": "cursor"
+  },
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"]
+    }
+  }
+}
+`));
+    console.log('Then restart the CLI.\n');
+    return;
+  }
 
   const answers = await inquirer.prompt([
     {
@@ -259,16 +243,6 @@ async function scanSpecs() {
       default: './mappings'
     },
     {
-      type: 'list',
-      name: 'aiOption',
-      message: 'How would you like to generate semantic keys?',
-      choices: [
-        { name: 'Basic (Rule-based)', value: 'basic' },
-        { name: 'AI-powered (via MCP)' + (hasMcpConfig ? ' ✅' : ' ⚠️'), value: 'ai-mcp', disabled: !hasMcpConfig },
-        { name: 'AI-powered (via API Keys)', value: 'ai-api' }
-      ]
-    },
-    {
       type: 'confirm',
       name: 'takeScreenshots',
       message: 'Take screenshots of pages?',
@@ -276,19 +250,10 @@ async function scanSpecs() {
     }
   ]);
 
-  // Build command
+  // Build command with MCP by default
   let command = `npx ts-node scan-spec-files.ts --tests-dir "${answers.testsDir}" --output-path "${answers.outputPath}"`;
   
-  if (answers.aiOption !== 'basic') {
-    command += ' --use-ai';
-    
-    if (answers.aiOption === 'ai-mcp') {
-      command += ' --use-mcp';
-      console.log(chalk.green('\n✅ Using Cursor MCP for AI capabilities (no external API key needed)'));
-    } else {
-      console.log(chalk.yellow('\nUsing external AI API - will check for API keys...'));
-    }
-  }
+  console.log(chalk.green('\n✅ Using Cursor MCP for semantic key generation'));
   
   if (!answers.takeScreenshots) {
     command += ' --no-screenshots';
@@ -389,136 +354,6 @@ async function updateMappings() {
     } catch (error: any) {
       spinner.fail('Error occurred');
       console.error(chalk.red(`\n❌ Error: ${error.message}`));
-    }
-  }
-}
-
-/**
- * Configure AI settings
- */
-async function configureAI() {
-  console.log(chalk.cyan('\n🤖 Configure AI Settings'));
-  console.log(chalk.dim('----------------------------------------'));
-
-  const { setupType } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'setupType',
-      message: 'How would you like to set up AI integration?',
-      choices: [
-        { name: 'Set up MCP Integration (Cursor)', value: 'mcp' },
-        { name: 'Configure API Keys', value: 'api' },
-        { name: 'View Current Configuration', value: 'view' }
-      ]
-    }
-  ]);
-
-  if (setupType === 'mcp') {
-    console.log(chalk.yellow('\nSetting up MCP Integration:'));
-    
-    // Check if .cursor directory exists
-    if (!fs.existsSync('.cursor')) {
-      fs.mkdirSync('.cursor', { recursive: true });
-      console.log(chalk.green('Created .cursor directory'));
-    }
-    
-    // Create MCP configuration
-    const mcpConfig = {
-      mcp_server: 'https://api.cursor.sh',
-      cursor_use_internal: true,
-      ai: {
-        provider: 'cursor'
-      }
-    };
-    
-    fs.writeFileSync('.cursor/mcp.json', JSON.stringify(mcpConfig, null, 2));
-    console.log(chalk.green('Created .cursor/mcp.json configuration'));
-    
-    console.log(chalk.green('\n✅ MCP integration configured successfully!'));
-    console.log(chalk.yellow('\nYou can now use MCP integration by:'));
-    console.log('  - Setting --use-mcp flag in CLI commands');
-    console.log('  - Selecting "AI-powered (via MCP)" in this interactive CLI');
-    console.log(chalk.dim('\nNote: MCP integration requires running within the Cursor environment'));
-    
-  } else if (setupType === 'api') {
-    console.log(chalk.yellow('\nConfiguring API Keys:'));
-    
-    const { apiKey, apiEndpoint } = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'apiKey',
-        message: 'Enter your AI API Key:',
-        validate: (input: string) => input.trim() !== '' ? true : 'API Key is required'
-      },
-      {
-        type: 'input',
-        name: 'apiEndpoint',
-        message: 'API Endpoint (press Enter for default):',
-        default: 'https://api.cursor.sh/v1/ai/completions'
-      }
-    ]);
-    
-    // Create or update .env file
-    let envContent = '';
-    if (fs.existsSync('.env')) {
-      envContent = fs.readFileSync('.env', 'utf8');
-    }
-    
-    // Replace or add AI_API_KEY
-    if (envContent.includes('AI_API_KEY=')) {
-      envContent = envContent.replace(/AI_API_KEY=.*(\r?\n|$)/, `AI_API_KEY=${apiKey}$1`);
-    } else {
-      envContent += `AI_API_KEY=${apiKey}\n`;
-    }
-    
-    // Replace or add AI_API_ENDPOINT
-    if (envContent.includes('AI_API_ENDPOINT=')) {
-      envContent = envContent.replace(/AI_API_ENDPOINT=.*(\r?\n|$)/, `AI_API_ENDPOINT=${apiEndpoint}$1`);
-    } else {
-      envContent += `AI_API_ENDPOINT=${apiEndpoint}\n`;
-    }
-    
-    fs.writeFileSync('.env', envContent);
-    console.log(chalk.green('Updated .env file with API configuration'));
-    
-    console.log(chalk.green('\n✅ API keys configured successfully!'));
-    console.log(chalk.yellow('\nFor current session, setting environment variables:'));
-    
-    // Set for current session
-    process.env.AI_API_KEY = apiKey;
-    process.env.AI_API_ENDPOINT = apiEndpoint;
-    
-  } else if (setupType === 'view') {
-    console.log(chalk.yellow('\nCurrent AI Configuration:'));
-    
-    // Check MCP configuration
-    if (fs.existsSync('.cursor/mcp.json')) {
-      console.log(chalk.green('✅ MCP Integration: Configured'));
-      try {
-        const mcpConfig = JSON.parse(fs.readFileSync('.cursor/mcp.json', 'utf8'));
-        console.log(chalk.dim(JSON.stringify(mcpConfig, null, 2)));
-      } catch (error: any) {
-        console.log(chalk.red('Error reading MCP configuration'));
-      }
-    } else {
-      console.log(chalk.red('❌ MCP Integration: Not configured'));
-    }
-    
-    // Check API keys
-    console.log(chalk.yellow('\nAPI Keys:'));
-    const apiKey = process.env.AI_API_KEY;
-    const apiEndpoint = process.env.AI_API_ENDPOINT;
-    
-    if (apiKey) {
-      console.log(chalk.green(`✅ API Key: ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`));
-    } else {
-      console.log(chalk.red('❌ API Key: Not set'));
-    }
-    
-    if (apiEndpoint) {
-      console.log(chalk.green(`✅ API Endpoint: ${apiEndpoint}`));
-    } else {
-      console.log(chalk.red('❌ API Endpoint: Not set'));
     }
   }
 }
@@ -645,19 +480,16 @@ function showHelp() {
   console.log(chalk.yellow('\nMain Features:'));
   console.log('- Extract DOM elements from URLs');
   console.log('- Scan Playwright test files to extract URLs and elements');
-  console.log('- Generate semantic keys using rule-based or AI approaches');
+  console.log('- Generate semantic keys using Cursor MCP');
   console.log('- Create HTML and JSON reports for extracted elements');
   console.log('- Take screenshots of analyzed pages');
   console.log('- Update existing semantic mappings');
 
-  console.log(chalk.yellow('\nAI Integration Options:'));
-  console.log('1. MCP Integration (Cursor):');
-  console.log('   - Uses Cursor\'s Model Context Protocol for seamless AI integration');
-  console.log('   - No API keys required when running in Cursor environment');
-  console.log('   - Set up with "Configure AI Settings" > "Set up MCP Integration"');
-  console.log('\n2. API Keys:');
-  console.log('   - Uses explicit API keys for AI services');
-  console.log('   - Configure with "Configure AI Settings" > "Configure API Keys"');
+  console.log(chalk.yellow('\nMCP Integration:'));
+  console.log('- Uses Cursor\'s Model Context Protocol (MCP) for semantic key generation');
+  console.log('- Integrates directly with Playwright through @playwright/mcp');
+  console.log('- No API keys required when running in Cursor environment');
+  console.log('- Configured through the .cursor/mcp.json file');
 
   console.log(chalk.yellow('\nTypical Workflow:'));
   console.log('1. Extract DOM elements from URLs or test files');

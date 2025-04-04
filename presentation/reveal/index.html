@@ -36,6 +36,27 @@
     .red-text {
       color: #F44336;
     }
+    .demo-card {
+      background-color: rgba(66, 133, 244, 0.1);
+      border-radius: 8px;
+      padding: 20px;
+      border-left: 5px solid #4285F4;
+      margin: 20px 0;
+    }
+    .demo-step {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+    }
+    .demo-step h4 {
+      margin: 0 0 5px 0;
+      color: #81C995;
+    }
+    .demo-step p {
+      margin: 0;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -44,8 +65,8 @@
       <!-- Title Slide -->
       <section>
         <h1>Playwright DOM Extractor</h1>
-        <h3>Semantic Selectors for Resilient Test Automation</h3>
-        <p>Work In Progress</p>
+        <h3>Natural Language Selectors for Resilient Test Automation</h3>
+        <p>Enhanced with Ambiguity Detection</p>
       </section>
 
       <!-- Problem Statement -->
@@ -56,6 +77,7 @@
           <li class="fragment"><strong>Manual Maintenance</strong>: Significant time updating selectors</li>
           <li class="fragment"><strong>Inconsistent Naming</strong>: No standard conventions for element identification</li>
           <li class="fragment"><strong>Context Disconnect</strong>: Selectors don't reflect element purpose</li>
+          <li class="fragment"><strong>Ambiguous Selectors</strong>: Multiple similar elements cause test flakiness</li>
         </ul>
       </section>
 
@@ -64,212 +86,166 @@
         <h2>Solution: Playwright DOM Extractor</h2>
         <ul>
           <li class="fragment"><strong>Extract & Analyze</strong>: Automatically extract DOM elements</li>
-          <li class="fragment"><strong>Generate Semantic Keys</strong>: Create meaningful, consistent selectors</li>
-          <li class="fragment"><strong>Intelligent Selection</strong>: Use smart matching and context detection</li>
+          <li class="fragment"><strong>Natural Language Descriptions</strong>: Find elements using human-readable terms</li>
+          <li class="fragment"><strong>Ambiguity Detection</strong>: Ensure unique element identification</li>
           <li class="fragment"><strong>AI Enhancement</strong>: Leverage Cursor AI for better element analysis</li>
         </ul>
       </section>
 
-      <!-- Key Features and Architecture in a vertical stack -->
+      <!-- System Architecture -->
       <section>
-        <!-- First slide: Key Features -->
-        <section>
-          <h2>Key Features</h2>
-          <ul>
-            <li class="fragment"><strong>DOM Monitor</strong>: Extract and analyze elements from web pages</li>
-            <li class="fragment"><strong>Semantic Helper</strong>: Find elements with smart, context-aware matching</li>
-            <li class="fragment"><strong>Cursor AI Integration</strong>: Generate better keys without API keys</li>
-            <li class="fragment"><strong>Test Generation</strong>: Create robust Playwright tests</li>
-          </ul>
-          <p class="fragment">(Press down arrow for architecture details)</p>
-        </section>
-        
-        <!-- Second slide: Architecture (vertically stacked) -->
-        <section>
-          <h2>Architecture</h2>
-          <pre><code class="language-text">┌─────────────────┐     ┌───────────────┐     ┌────────────────┐
-│                 │     │               │     │                │
-│  DOM Extraction │────▶│  Analysis &   │────▶│  Report        │
-│  (Playwright)   │     │  Key Creation │     │  Generation    │
-│                 │     │               │     │                │
-└─────────────────┘     └───────────────┘     └────────────────┘
-                              │
-                              ▼
-                        ┌─────────────┐
-                        │             │
-                        │  AI Service │
-                        │  (MCP/API)  │
-                        │             │
-                        └─────────────┘</code></pre>
-          <p class="fragment">Modular design enables flexibility in implementation and use cases</p>
-        </section>
+        <h2>System Architecture</h2>
+        <pre style="font-size: 0.8em; background: #333; padding: 15px; border-radius: 5px;"><code class="language-text">+---------------------------+     +---------------------+
+|       Test Scripts        |---->| Semantic Helper     |
+| (getByDescription)        |     | (Natural Language)  |
++---------------------------+     +---------------------+
+                                    |               ^
+                                    v               |
+                              +---------------------+     +------------------+
+                              | Mapping Files       |<----| DOM Monitor      |
+                              | (Element Storage)   |     | (Element Extract)|
+                              +---------------------+     +------------------+
+                                                            |
+                                                            v
+                                                          +------------------+
+                                                          | MCP AI Service   |
+                                                          | (Key Generation) |
+                                                          +------------------+</code></pre>
+        <ul class="fragment">
+          <li><strong>Test Scripts</strong>: Use natural language via getByDescription</li>
+          <li><strong>Semantic Helper</strong>: Matches descriptions to elements</li>
+          <li><strong>DOM Monitor</strong>: Extracts elements from pages</li>
+          <li><strong>MCP AI Service</strong>: Generates semantic keys and alternative names</li>
+        </ul>
       </section>
 
-      <!-- data-testid Prioritization split into two vertical slides -->
+      <!-- Component Interactions -->
       <section>
-        <!-- First slide: Before using data-testid -->
-        <section>
-          <h2>data-testid Prioritization</h2>
-          <div class="feature-box">
-            <p>Enhanced reliability by prioritizing attributes designed for testing</p>
-          </div>
-          <h3>Before</h3>
-          <pre><code class="language-html">&lt;button id="submit-btn" class="btn primary"&gt;
-  Submit
-&lt;/button&gt;</code></pre>
-          <pre><code class="language-typescript">// Brittle selectors that break with UI changes
-await page.fill('#username', 'testuser');
-await page.click('.login-btn');</code></pre>
-          <p class="fragment">(Press down arrow to see the improved approach)</p>
-        </section>
-        
-        <!-- Second slide: After using data-testid -->
-        <section>
-          <h2>data-testid Prioritization</h2>
-          <h3>After</h3>
-          <pre><code class="language-html">&lt;button id="submit-btn" class="btn primary"
-  data-testid="login_button_submit"&gt;
-  Submit
-&lt;/button&gt;</code></pre>
-          <pre><code class="language-typescript">// Resilient selectors with semantic meaning
-const loginBtn = await getSemanticSelector('login button');
-await page.click(loginBtn);</code></pre>
-          <p>Tests remain stable even when classes and IDs change</p>
-        </section>
+        <h2>Component Interactions</h2>
+        <pre><code class="language-text">┌───────────────┐      ┌─────────────────┐      ┌────────────────┐
+│ Test Scripts  │─────▶│ Semantic Helper │─────▶│ DOM Monitor    │
+└───────────────┘      └─────────────────┘      └────────────────┘
+                               │  ▲                     │
+                               ▼  │                     ▼
+                        ┌──────────────┐       ┌────────────────┐
+                        │ Mapping Files│◀──────│ MCP AI Service │
+                        └──────────────┘       └────────────────┘</code></pre>
+        <p>Flexible, modular design enables powerful element identification with minimal maintenance</p>
       </section>
 
-      <!-- Improved Semantic Key Format slide -->
+      <!-- Natural Language Description Matching -->
       <section>
-        <section>
-          <h2>Semantic Key Format</h2>
-          <div class="note-box">
-            <p>Consistent, meaningful selectors improve test readability and maintenance</p>
-          </div>
-          <div style="background-color: rgba(0,100,0,0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
-            <pre><code class="language-text" style="font-size: 1.3em;">[context]_[element-type]_[purpose]</code></pre>
-          </div>
-          <p class="fragment">(Press down arrow to see examples)</p>
-        </section>
-        
-        <section>
-          <h2>Semantic Key Examples</h2>
-          <table style="width: 100%; border-collapse: separate; border-spacing: 0 15px;">
-            <tr>
-              <th style="width: 33%; text-align: right; padding-right: 15px;">Context</th>
-              <th style="width: 33%; text-align: center;">Element Type</th>
-              <th style="width: 33%; text-align: left; padding-left: 15px;">Purpose</th>
-            </tr>
-            <tr class="fragment">
-              <td style="text-align: right; color: #4CAF50; font-weight: bold;">login</td>
-              <td style="text-align: center; color: #FFC107; font-weight: bold;">text_input</td>
-              <td style="text-align: left; color: #2196F3; font-weight: bold;">username</td>
-            </tr>
-            <tr class="fragment">
-              <td style="text-align: right; color: #4CAF50; font-weight: bold;">profile</td>
-              <td style="text-align: center; color: #FFC107; font-weight: bold;">button</td>
-              <td style="text-align: left; color: #2196F3; font-weight: bold;">save</td>
-            </tr>
-            <tr class="fragment">
-              <td style="text-align: right; color: #4CAF50; font-weight: bold;">cart</td>
-              <td style="text-align: center; color: #FFC107; font-weight: bold;">checkbox</td>
-              <td style="text-align: left; color: #2196F3; font-weight: bold;">gift_wrap</td>
-            </tr>
-          </table>
-        </section>
-      </section>
-
-      <!-- Smart Selector System split into two vertically stacked slides -->
-      <section>
-        <!-- First part of Smart Selector System -->
-        <section>
-          <h2>Smart Selector System</h2>
-          <p>Multiple ways to find elements using semantic selectors:</p>
-          <pre><code class="language-typescript">// Traditional approach - exact key
+        <h2>Natural Language Description Matching</h2>
+        <pre><code class="language-typescript">// Old approach - exact semantic key
 const button = await getSemanticSelector('login_button_submit');
 
-// Smart selector - partial key
-const button = await getSemanticSelector('submit');
+// New approach - natural language description
+const button = await getByDescription(page, 'login button');
 
-// Smart selector - natural language
-const button = await getSemanticSelector('login button');</code></pre>
-          <p class="fragment">(Press down arrow for more selector examples)</p>
-        </section>
-        
-        <!-- Second part of Smart Selector System -->
-        <section>
-          <h2>Smart Selector System (Continued)</h2>
-          <p>Advanced selector techniques:</p>
-          <pre><code class="language-typescript">// Smart selector - with context
-const button = await getSemanticSelector('save', 'profile');
-
-// Smart selector - pattern matching
-const button = await getSemanticSelector('*_button_*');
-
-// Multiple elements matching a pattern
-const socialLinks = await getSemanticSelector('profile_link_*');</code></pre>
-        </section>
+// With feature context for disambiguation
+const button = await getByDescription(page, 'submit button', 'checkout');</code></pre>
+        <p class="fragment">More intuitive, readable, and maintainable tests</p>
       </section>
 
-      <!-- Usage: CLI Examples -->
+      <!-- Ambiguity Detection -->
       <section>
-        <h2>Usage Examples</h2>
+        <h2>Ambiguity Detection</h2>
+        <pre><code class="language-typescript">try {
+  // This might match multiple elements with similar scores
+  const deleteButton = await getByDescription(page, 'delete button');
+  await deleteButton.click();
+} catch (error) {
+  // Will suggest more specific descriptions when ambiguous
+  console.error(error);
+  // Example output: "Ambiguous match for 'delete button'. 
+  // Consider using 'delete item button' or 'delete account button'"
+}</code></pre>
+        <p class="fragment">Prevents flaky tests by ensuring unique element selection</p>
+      </section>
+
+      <!-- How Ambiguity Detection Works -->
+      <section>
+        <h2>How Ambiguity Detection Works</h2>
+        <ol>
+          <li class="fragment"><strong>Score-based Matching</strong>: Elements scored by relevance to description</li>
+          <li class="fragment"><strong>Threshold Analysis</strong>: Detect when multiple elements have similar scores</li>
+          <li class="fragment"><strong>Alternative Suggestions</strong>: Propose more specific descriptions</li>
+          <li class="fragment"><strong>Feature Enforcement</strong>: Require feature specification when necessary</li>
+        </ol>
+        <p class="fragment">Actively guides developers to write more reliable tests</p>
+      </section>
+
+      <!-- data-testid Prioritization -->
+      <section>
+        <h2>data-testid Prioritization</h2>
         <div class="container">
           <div class="col">
-            <h3>Demo Scripts</h3>
-            <pre><code class="language-bash"># Run basic demo
-npm run basic-demo
-
-# Run MCP integration demo
-npm run mcp-demo</code></pre>
+            <h3>HTML</h3>
+            <pre><code class="language-html">&lt;button id="submit-btn" class="btn primary"
+  data-testid="login_submit_button"&gt;
+  Submit
+&lt;/button&gt;</code></pre>
           </div>
           <div class="col">
-            <h3>Direct Commands</h3>
-            <pre><code class="language-bash"># Extract with MCP
-npm run monitor-page -- \
-  --url https://example.com \
-  --use-mcp</code></pre>
+            <h3>Test Code</h3>
+            <pre><code class="language-typescript">// Resilient selectors with natural language
+await getByDescription(page, 'login button').click();</code></pre>
           </div>
         </div>
+        <p class="fragment">Tests remain stable even when classes and IDs change</p>
       </section>
 
-      <!-- Using Semantic Keys in Tests -->
+      <!-- Alternative Names for Flexibility -->
       <section>
-        <h2>Using Semantic Keys in Tests</h2>
-        <pre><code class="language-typescript">import { getSemanticSelector } from '../utils/semantic-helper';
-
-test('Login workflow', async ({ page }) => {
-  await page.goto('https://example.com/login');
-  
-  // Smart matching with data-testid priority
-  const username = await getSemanticSelector('username');
-  const password = await getSemanticSelector('password');
-  const loginBtn = await getSemanticSelector('login button');
-  
-  // Use selectors in test
-  await page.fill(username, 'testuser');
-  await page.fill(password, 'password123');
-  await page.click(loginBtn);
-});</code></pre>
+        <h2>Alternative Names for Flexibility</h2>
+        <pre><code class="language-json">{
+  "tagName": "button",
+  "semanticKey": "login_submit_button",
+  "alternativeNames": [
+    "login button", 
+    "sign in button",
+    "submit credentials button",
+    "log in to account button"
+  ]
+}</code></pre>
+        <p class="fragment">AI-generated alternatives provide multiple ways to refer to elements</p>
+        <p class="fragment">Longer alternatives help resolve ambiguity</p>
       </section>
 
-      <!-- MCP Integration -->
+      <!-- Under The Hood -->
+      <section>
+        <h2>Under The Hood: Description to Selector</h2>
+        <ol>
+          <li class="fragment">User calls <code>getByDescription(page, 'login button')</code></li>
+          <li class="fragment">Semantic helper loads cached mapping files</li>
+          <li class="fragment">Each element scored based on:
+            <ul>
+              <li>Semantic key match</li>
+              <li>Alternative name match</li>
+              <li>Feature context</li>
+              <li>Tag name and text content</li>
+            </ul>
+          </li>
+          <li class="fragment">Ambiguity detection identifies similar scores</li>
+          <li class="fragment">Best match translated to a Playwright selector</li>
+          <li class="fragment">Returned as a Playwright locator</li>
+        </ol>
+      </section>
+
+      <!-- Cursor MCP Integration -->
       <section>
         <h2>Cursor MCP Integration</h2>
-        <div class="feature-box">
-          <p>Direct integration with Cursor AI - no external API keys needed!</p>
-        </div>
-        <pre><code class="language-typescript">// Initialize DOM Monitor with MCP enabled
-const domMonitor = new DOMMonitor({
+        <pre><code class="language-typescript">// DOM Monitor initializes MCPAIService
+const monitor = new DOMMonitor({
   useAI: true,
-  useMCP: true, // Use Cursor AI without external API keys
-  outputPath: './mappings'
+  useMCP: true  // Use Cursor AI without external API keys
 });
 
-// Extract elements and generate AI-enhanced keys
-const elements = await domMonitor.extractDOMElements(page, context);
-const elementsWithKeys = await domMonitor.generateSemanticKeys(
-  elements, 'https://example.com/login'
-);</code></pre>
+// MCPAIService uses Cursor for:
+// 1. Generating semantic keys for elements
+// 2. Creating alternative names for better matching
+// 3. Analyzing element context and purpose</code></pre>
+        <p class="fragment">No API keys needed - works directly with Cursor</p>
       </section>
 
       <!-- Key Benefits -->
@@ -277,9 +253,9 @@ const elementsWithKeys = await domMonitor.generateSemanticKeys(
         <h2>Key Benefits</h2>
         <ul>
           <li class="fragment"><strong>Resilience</strong>: Tests remain stable through UI changes</li>
-          <li class="fragment"><strong>Maintainability</strong>: Clear, semantic naming improves readability</li>
-          <li class="fragment"><strong>Flexibility</strong>: Smart matching reduces cognitive load</li>
-          <li class="fragment"><strong>Context Awareness</strong>: Keys reflect element purpose and location</li>
+          <li class="fragment"><strong>Maintainability</strong>: Clear, natural descriptions improve readability</li>
+          <li class="fragment"><strong>Flexibility</strong>: Natural language matching reduces cognitive load</li>
+          <li class="fragment"><strong>Ambiguity Prevention</strong>: Unique element identification guaranteed</li>
           <li class="fragment"><strong>AI Enhancement</strong>: Better quality keys with less effort</li>
         </ul>
       </section>
@@ -294,22 +270,52 @@ git clone https://github.com/yourusername/playwright-dom-extractor.git
 npm ci
 
 # Run demos
-npm run basic-demo
-npm run mcp-demo
-npm run semantic-demo</code></pre>
+node examples/dom-extraction-demo.js
+node examples/ambiguity-detection-demo.ts
+npx playwright test examples/essential-demo.spec.ts</code></pre>
       </section>
 
-      <!-- Demo Time -->
+      <!-- Demo Flow -->
       <section>
-        <h2>Demo Time!</h2>
-        <div class="demo-card">
-          <h3>Demo Flow</h3>
-          <ol>
-            <li>Basic DOM Extraction (<code>npm run basic-demo</code>)</li>
-            <li>AI-Powered Extraction with MCP (<code>npm run mcp-demo</code>)</li>
-            <li>Smart Selector System (<code>npm run semantic-demo</code>)</li>
-            <li>Using Selectors in Tests</li>
-          </ol>
+        <h2>Interactive Demonstration</h2>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+          <div style="width: 30%;">
+            <div class="demo-step" style="background: rgba(76, 175, 80, 0.2); border-left: 4px solid #4CAF50; min-height: 120px;">
+              <h4 style="color: #81C995;">1. System Architecture</h4>
+              <p style="color: #e0e0e0; font-size: 0.9em;">Understanding how components interact to enable natural language selectors</p>
+            </div>
+            
+            <div class="demo-step" style="background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; margin-top: 15px; min-height: 120px;">
+              <h4 style="color: #81C995;">2. DOM Extraction</h4>
+              <p style="color: #e0e0e0; font-size: 0.9em;">Extracting elements and generating semantic keys with AI</p>
+            </div>
+          </div>
+          
+          <div style="width: 30%;">
+            <div class="demo-step" style="background: rgba(76, 175, 80, 0.2); border-left: 4px solid #4CAF50; min-height: 120px;">
+              <h4 style="color: #81C995;">3. Description Matching</h4>
+              <p style="color: #e0e0e0; font-size: 0.9em;">Finding elements using natural language with Playwright</p>
+            </div>
+            
+            <div class="demo-step" style="background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; margin-top: 15px; min-height: 120px;">
+              <h4 style="color: #81C995;">4. Ambiguity Detection</h4>
+              <p style="color: #e0e0e0; font-size: 0.9em;">Interactive demo showing how non-unique matches are prevented</p>
+            </div>
+          </div>
+          
+          <div style="width: 30%;">
+            <div class="demo-step" style="background: rgba(76, 175, 80, 0.2); border-left: 4px solid #4CAF50; min-height: 120px;">
+              <h4 style="color: #81C995;">5. Data-testid Prioritization</h4>
+              <p style="color: #e0e0e0; font-size: 0.9em;">Demonstrating resilience through data attributes</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <div style="display: inline-block; background: rgba(76, 175, 80, 0.3); padding: 15px; border-radius: 50%; height: 80px; width: 80px; line-height: 80px;">
+                <span style="font-size: 36px; color: #e0e0e0;">→</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -319,7 +325,7 @@ npm run semantic-demo</code></pre>
         <ul>
           <li><a href="https://github.com/yourusername/playwright-dom-extractor">GitHub Repository</a></li>
           <li><a href="https://github.com/yourusername/playwright-dom-extractor/blob/master/README.md">Documentation</a></li>
-          <li><a href="https://github.com/yourusername/playwright-dom-extractor/blob/master/SMART-SELECTOR.md">Smart Selector Guide</a></li>
+          <li><a href="https://github.com/yourusername/playwright-dom-extractor/blob/master/BEST-PRACTICES.md">Best Practices Guide</a></li>
           <li><a href="https://github.com/yourusername/playwright-dom-extractor/blob/master/MCP-INTEGRATION.md">MCP Integration Guide</a></li>
         </ul>
       </section>
@@ -328,7 +334,6 @@ npm run semantic-demo</code></pre>
       <section>
         <h2>Q&A</h2>
         <p>Questions?</p>
-        <p><small>Contact: [Your Contact Information]</small></p>
       </section>
     </div>
   </div>

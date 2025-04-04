@@ -108,19 +108,19 @@ npm run monitor-page -- --url https://example.com --feature login
 
 ## Using Semantic Keys in Tests
 
-In test files, use the `getSemanticSelector` function:
+In test files, use the `getByDescription` function:
 
 ```typescript
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getByDescription } from '../utils/semantic-helper';
 
 test('Login workflow', async ({ page }) => {
   // Navigate to page
   await page.goto('https://example.com/login');
   
   // Get semantic selectors
-  const usernameSelector = await getSemanticSelector('login_text_input_username');
-  const passwordSelector = await getSemanticSelector('login_password_input');
-  const submitSelector = await getSemanticSelector('login_submit_button');
+  const usernameSelector = await getByDescription('login_text_input_username');
+  const passwordSelector = await getByDescription('login_password_input');
+  const submitSelector = await getByDescription('login_submit_button');
   
   // Use selectors in test
   await page.fill(usernameSelector, 'testuser');
@@ -128,7 +128,7 @@ test('Login workflow', async ({ page }) => {
   await page.click(submitSelector);
   
   // Assert login success
-  const welcomeSelector = await getSemanticSelector('dashboard_heading_welcome');
+  const welcomeSelector = await getByDescription('dashboard_heading_welcome');
   await expect(page.locator(welcomeSelector)).toBeVisible();
 });
 ```

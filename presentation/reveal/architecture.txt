@@ -1,0 +1,50 @@
++---------------------------+
+|       Test Scripts        |
+| (Using getByDescription)  |
++---------------------------+
+             |
+             v
++---------------------------+
+|      Semantic Helper      |
+| (Natural Language Matcher)|
++---------------------------+
+             |
+             v
++---------------------------+     +----------------------+
+|      Mapping Files        |<----| DOM Monitor         |
+| (Element Descriptions)    |     | (Element Extraction)|
++---------------------------+     +----------------------+
+                                     |
+                                     v
+                                  +----------------------+
+                                  | MCP AI Service       |
+                                  | (Semantic Generation)|
+                                  +----------------------+
+
+Component Responsibilities:
+
+1. Test Scripts
+   - Use natural language descriptions with getByDescription
+   - Interact with page elements using Playwright locators
+
+2. Semantic Helper
+   - Translates descriptions to selectors
+   - Scores potential element matches
+   - Detects and handles ambiguity
+   - Returns Playwright locators
+
+3. Mapping Files
+   - Cache element information
+   - Store semantic keys and alternative names
+   - Enable fast lookup without re-extracting elements
+
+4. DOM Monitor
+   - Extracts elements from web pages
+   - Orchestrates semantic key generation
+   - Saves extracted data to mapping files
+
+5. MCP AI Service
+   - Analyzes DOM elements using Cursor AI
+   - Generates semantic keys for elements
+   - Creates alternative natural language descriptions
+   - Improves element identification accuracy 

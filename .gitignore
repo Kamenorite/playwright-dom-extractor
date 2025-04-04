@@ -52,4 +52,8 @@ temp/
 
 # IDE-specific files
 *.code-workspace
-.history/ 
+.history/
+
+# Backup files
+backup/
+*.bak 

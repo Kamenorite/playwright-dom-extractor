@@ -1,12 +1,7 @@
 ---
-name: Web Element Analysis
-version: "1.0"
 description: "Analyzes web pages and generates semantic keys for elements using Playwright"
-globs:
-  - "**/*.spec.ts"
-  - "**/*.test.ts"
-triggers:
-  - command
+globs: 
+alwaysApply: false
 ---
 
 # Web Element Analysis

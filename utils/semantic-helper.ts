@@ -16,6 +16,10 @@ interface DOMElement {
   semanticKey?: string;
   featureName?: string;
   url?: string;
+  stableId?: string;
+  alternativeNames?: string[];
+  alternativeSelectors?: string[];
+  lastUpdated?: string;
 }
 
 // Cache for loaded mappings to avoid repeated file reads
@@ -41,178 +45,487 @@ export function clearMappingCache(): void {
 }
 
 /**
- * Gets a selector (CSS or XPath) using a semantic key
+ * Gets a selector using natural language description
+ * Matches against semantic keys and alternative names in the mapping file
  * 
- * @param semanticKey The semantic key to look up
+ * @param description Human-readable description of the element (e.g., "search button")
  * @param featureName Optional feature name to scope the search
  * @param mappingPath Custom path to the mapping files (optional)
  * @returns The selector string
  */
-export async function getSemanticSelector(
-  semanticKey: string,
+export async function getElementByDescription(
+  description: string,
   featureName?: string,
   mappingPath: string = './mappings'
 ): Promise<string> {
-  // If this is a partial/smart match request, use the smart selector function
-  if (!semanticKey.includes('_') || semanticKey.endsWith('_') || semanticKey.includes('*')) {
-    try {
-      return await getSmartSemanticSelector(semanticKey, featureName, mappingPath);
-    } catch (error) {
-      // If smart selector fails, continue with exact match approach
-      console.warn(`Smart selector failed, falling back to exact match: ${error}`);
-    }
-  }
-
   // Load all mapping files if not in cache
   if (Object.keys(mappingCache).length === 0) {
     await loadAllMappings(mappingPath);
   }
+
+  // Normalize the description for matching
+  const normalizedDescription = description.toLowerCase().trim();
+  const descriptionWords = normalizedDescription.split(/\s+/);
   
-  // Check if there's a feature-specific key to search for
-  const searchKey = featureName ? 
-    `${featureName.toLowerCase()}_${semanticKey}` : 
-    semanticKey;
+  // Track all potential matches and their scores
+  const potentialMatches: Array<{ element: DOMElement, score: number, matchedAltName?: string }> = [];
   
-  // First try to find element with exact feature-prefixed key
-  let element = findElementByKey(searchKey);
-  
-  // If not found and we were looking for a feature-specific key, try the generic key
-  if (!element && featureName) {
-    element = findElementByKey(semanticKey);
-  }
-  
-  if (element) {
-    // Return the best available selector
-    if (element.attributes && element.attributes['data-testid']) {
-      return `[data-testid="${element.attributes['data-testid']}"]`;
-    } else if (element.id) {
-      return `#${element.id}`;
-    } else if (element.xpath) {
-      return element.xpath;
+  // Search through all mapping files
+  for (const file of Object.keys(mappingCache)) {
+    for (const element of mappingCache[file]) {
+      // Skip elements without semantic keys
+      if (!element.semanticKey) continue;
+      
+      // Calculate match score for this element
+      let score = 0;
+      
+      // Check if the element's semantic key matches the description
+      const semanticKey = element.semanticKey.toLowerCase();
+      
+      // Exact match with semantic key (removing feature prefix if present)
+      const keyWithoutPrefix = semanticKey.includes('_') ? 
+        semanticKey.split('_').slice(1).join('_') : 
+        semanticKey;
+      
+      if (keyWithoutPrefix === normalizedDescription) {
+        score += 100;
+      }
+      
+      // Partial match with semantic key
+      const keyWords = keyWithoutPrefix.split(/[_-]/);
+      for (const word of descriptionWords) {
+        if (word.length < 3) continue; // Skip short words
+        if (keyWords.includes(word)) {
+          score += 10;
+        }
+        if (keyWithoutPrefix.includes(word)) {
+          score += 5;
+        }
+      }
+      
+      // Check alternative names for matches
+      let matchedAltName = '';
+      if (element.alternativeNames && element.alternativeNames.length > 0) {
+        for (const altName of element.alternativeNames) {
+          const normalizedAltName = altName.toLowerCase();
+          
+          // Exact match with alternative name
+          if (normalizedAltName === normalizedDescription) {
+            score += 100;
+            matchedAltName = altName;
+            break; // Found an exact match, no need to check other alt names
+          }
+          
+          // Word-level matches with alternative name
+          let wordMatches = 0;
+          let wordMatchTotal = descriptionWords.length;
+          
+          for (const word of descriptionWords) {
+            if (word.length < 3) {
+              wordMatchTotal--; // Don't count very short words
+              continue;
+            }
+            if (normalizedAltName.includes(word)) {
+              wordMatches++;
+            }
+          }
+          
+          // If all significant words match, high score
+          if (wordMatches > 0 && wordMatchTotal > 0) {
+            const altScore = Math.round(30 * (wordMatches / wordMatchTotal));
+            if (altScore > 0) {
+              score += altScore;
+              // Keep track of which alternative name matched best
+              if (!matchedAltName || altScore > 20) {
+                matchedAltName = altName;
+              }
+            }
+          }
+        }
+      }
+      
+      // Boost elements from the specified feature
+      if (featureName && element.featureName === featureName) {
+        score += 20;
+      }
+      
+      // Check element's inner text for matches with description
+      if (element.innerText) {
+        const normalizedText = element.innerText.toLowerCase();
+        for (const word of descriptionWords) {
+          if (word.length < 3) continue;
+          if (normalizedText.includes(word)) {
+            score += 5;
+          }
+        }
+      }
+      
+      // Check tag name for matches (for element type descriptions like "button", "input", etc.)
+      if (descriptionWords.includes(element.tagName.toLowerCase())) {
+        score += 15;
+      }
+      
+      // Add to potential matches if score is above threshold
+      if (score > 0) {
+        potentialMatches.push({ 
+          element, 
+          score,
+          matchedAltName
+        });
+      }
     }
   }
-
-  throw new Error(`Semantic key '${semanticKey}' not found in any mapping files`);
+  
+  // Sort potential matches by score (highest first)
+  potentialMatches.sort((a, b) => b.score - a.score);
+  
+  // Check for uniqueness - if multiple elements have similar high scores
+  if (potentialMatches.length >= 2) {
+    const topScore = potentialMatches[0].score;
+    const runnerUpScore = potentialMatches[1].score;
+    
+    // If scores are close (within 20% of each other), we have ambiguity
+    const ambiguityThreshold = topScore * 0.8;
+    const isAmbiguous = runnerUpScore >= ambiguityThreshold;
+    
+    if (isAmbiguous) {
+      console.warn(`Ambiguous match detected for '${description}': Found ${potentialMatches.length} elements with similar scores`);
+      console.warn(`Top match: '${potentialMatches[0].element.semanticKey}' with score ${potentialMatches[0].score}`);
+      console.warn(`Runner-up: '${potentialMatches[1].element.semanticKey}' with score ${potentialMatches[1].score}`);
+      
+      // Suggest more specific descriptions based on alternative names
+      console.warn('Consider using a more specific description like:');
+      potentialMatches.slice(0, 3).forEach(match => {
+        if (match.element.alternativeNames && match.element.alternativeNames.length > 0) {
+          // Suggest longer, more specific alternative names
+          const specificAlternatives = match.element.alternativeNames
+            .filter(alt => alt.length > description.length)
+            .sort((a, b) => b.length - a.length)
+            .slice(0, 2);
+            
+          if (specificAlternatives.length > 0) {
+            console.warn(`- For '${match.element.semanticKey}': try "${specificAlternatives[0]}"`);
+          }
+        }
+      });
+      
+      // If we have feature info on elements, suggest adding feature context
+      const differentFeatures = new Set(potentialMatches.slice(0, 3)
+        .map(match => match.element.featureName)
+        .filter(Boolean));
+        
+      if (differentFeatures.size > 1) {
+        console.warn('Or specify the feature name as a second parameter:');
+        potentialMatches.slice(0, 3).forEach(match => {
+          if (match.element.featureName) {
+            console.warn(`- For '${match.element.semanticKey}': specify feature "${match.element.featureName}"`);
+          }
+        });
+      }
+      
+      // If a feature name was not provided but ambiguous elements have different features,
+      // we could throw an error requiring feature specification
+      if (!featureName && differentFeatures.size > 1) {
+        throw new Error(`Ambiguous match for '${description}'. Please specify a feature name from: ${Array.from(differentFeatures).join(', ')}`);
+      }
+    }
+  }
+  
+  // Get the best match
+  const bestMatch = potentialMatches.length > 0 ? potentialMatches[0] : null;
+  
+  // If we found a match, generate a selector for it
+  if (bestMatch) {
+    console.log(`Description '${description}' matched to '${bestMatch.element.semanticKey}' with score ${bestMatch.score}`);
+    
+    // Return the best available selector using our selector generation logic
+    return generateSelector(bestMatch.element);
+  }
+  
+  throw new Error(`No element found matching description '${description}'`);
 }
 
 /**
- * Gets a smart semantic selector that handles partial matching
- * Intelligently analyzes the calling context to find the right element
- * 
- * @param partialKey The partial or descriptive semantic key to look up
- * @param featureName Optional feature name to scope the search
- * @param mappingPath Custom path to the mapping files
- * @returns The selector string
+ * Helper function to generate a reliable selector from a DOM element
  */
-export async function getSmartSemanticSelector(
-  partialKey: string,
-  featureName?: string,
+function generateSelector(element: DOMElement): string {
+  // Use the best available selector strategy
+  if (element.attributes && element.attributes['data-testid']) {
+    return `[data-testid="${element.attributes['data-testid']}"]`;
+  } else if (element.id) {
+    return `#${element.id}`;
+  } else if (element.alternativeSelectors && element.alternativeSelectors.length > 0) {
+    const primarySelector = element.alternativeSelectors[0];
+    // Prefix XPath selectors with xpath=
+    if (primarySelector.startsWith('/')) {
+      return `xpath=${primarySelector}`;
+    }
+    return primarySelector;
+  } else {
+    // Generate a CSS selector based on element properties
+    return generateCssSelector(element);
+  }
+}
+
+/**
+ * Generates a reliable CSS selector from element properties
+ * Used as an alternative to XPath
+ */
+function generateCssSelector(element: DOMElement): string {
+  // Try to generate selectors from alternativeNames first
+  if (element.alternativeNames && element.alternativeNames.length > 0) {
+    // Look for alternative names with text content
+    for (const altName of element.alternativeNames) {
+      // Check if this is a simple text description like "search button"
+      if (altName.includes(element.tagName) && altName.split(' ').length <= 3) {
+        // Extract text content from alternative name (e.g., "search" from "search button")
+        const textPart = altName.replace(element.tagName, '').trim();
+        if (textPart) {
+          return `${element.tagName}:text("${textPart}")`;
+        }
+      }
+      
+      // Check if there is text content that can be used for text selector
+      if (element.innerText && element.innerText.trim().length > 0 && 
+          (altName.includes(element.innerText.trim()) || element.innerText.trim().includes(altName))) {
+        return `:text("${element.innerText.trim()}")`;
+      }
+    }
+  }
+  
+  let selector = element.tagName;
+  
+  // Add specific attributes that help identify the element
+  if (element.attributes) {
+    // Type attribute is often useful
+    if (element.attributes.type) {
+      selector += `[type="${element.attributes.type}"]`;
+    }
+    
+    // Role attribute is good for accessibility and stable
+    if (element.attributes.role) {
+      selector += `[role="${element.attributes.role}"]`;
+    }
+    
+    // Name, placeholder, and aria-label are useful for form elements
+    if (element.attributes.name) {
+      selector += `[name="${element.attributes.name}"]`;
+    }
+    
+    if (element.attributes.placeholder) {
+      selector += `[placeholder="${element.attributes.placeholder}"]`;
+    }
+    
+    if (element.attributes['aria-label']) {
+      selector += `[aria-label="${element.attributes['aria-label']}"]`;
+    }
+  }
+  
+  // For buttons and links, text content is often a good identifier
+  if (
+    element.innerText && 
+    ['button', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'label'].includes(element.tagName)
+  ) {
+    // For very short text contents, we can use exact text matching
+    if (element.innerText.length < 30) {
+      return `${element.tagName}:text("${element.innerText.trim()}")`;
+    }
+  }
+  
+  // If we couldn't create a specific CSS selector, fall back to XPath but with a warning
+  if (selector === element.tagName && element.xpath) {
+    console.warn(`Falling back to XPath for ${element.semanticKey} - consider adding data-testid attributes to improve test reliability`);
+    return `xpath=${element.xpath}`;
+  }
+  
+  return selector;
+}
+
+/**
+ * Find an element by its semantic key in the cache
+ */
+function findElementByKey(semanticKey: string): DOMElement | undefined {
+  for (const file of Object.keys(mappingCache)) {
+    const elements = mappingCache[file];
+    const element = elements.find(el => el.semanticKey === semanticKey);
+    if (element) {
+      return element;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Load all mapping files into cache
+ */
+async function loadAllMappings(mappingPath: string): Promise<void> {
+  console.log(`Loading mapping files from: ${mappingPath}`);
+  
+  const globPattern = path.join(mappingPath, '*.json');
+  console.log(`Using glob pattern: ${globPattern}`);
+  
+  const files = glob.sync(globPattern);
+  console.log(`Found ${files.length} mapping files: ${files.join(', ')}`);
+  
+  for (const file of files) {
+    try {
+      if (!mappingCache[file]) {
+        console.log(`Reading mapping file: ${file}`);
+        const fileContent = fs.readFileSync(file, 'utf-8');
+        const mappingData = JSON.parse(fileContent);
+        
+        // Handle both old (array) and new (object with elements) formats
+        if (Array.isArray(mappingData)) {
+          // Old format - direct array of elements
+          console.log(`Mapping file contains ${mappingData.length} elements (old format)`);
+          mappingCache[file] = mappingData;
+        } else if (mappingData.elements && Array.isArray(mappingData.elements)) {
+          // New format - object with elements array and metadata
+          console.log(`Mapping file contains ${mappingData.elements.length} elements (new format)`);
+          mappingCache[file] = mappingData.elements;
+        } else {
+          console.error(`Unrecognized mapping file format in ${file}`);
+          mappingCache[file] = [];
+        }
+      }
+    } catch (error) {
+      console.error(`Error reading mapping file ${file}:`, error);
+      mappingCache[file] = [];
+    }
+  }
+  
+  // Debug info about cached mappings
+  const totalKeys = Object.values(mappingCache).reduce((acc, elements) => 
+    acc + elements.filter(el => el.semanticKey).length, 0
+  );
+  console.log(`Total cached elements with semantic keys: ${totalKeys}`);
+}
+
+/**
+ * Updates the selector index for the specified URL
+ * 
+ * @param url The URL to update selectors for
+ * @param mappingPath Custom path to the mapping files (optional)
+ * @param featureName Optional feature name for contextual mapping
+ * @returns A map of semantic keys to selectors
+ */
+export async function updateSelectorIndex(
+  url: string,
+  mappingPath: string = './mappings',
+  featureName?: string
+): Promise<SelectorMap> {
+  // Import the DOMMonitor dynamically to avoid circular dependencies
+  const { DOMMonitor } = await import('../dom-monitor');
+  
+  const monitor = new DOMMonitor({ 
+    outputPath: mappingPath,
+    featureName: featureName // Pass feature name to the DOM monitor
+  });
+  await monitor.init();
+  await monitor.navigateTo(url);
+  
+  const elements = await monitor.extractDOMElements();
+  const elementsWithKeys = await monitor.generateSemanticKeys(elements);
+  
+  await monitor.saveReport(url, elementsWithKeys);
+  await monitor.close();
+  
+  // Create a map of semantic keys to selectors
+  const selectorMap: SelectorMap = {};
+  elementsWithKeys.forEach((element: DOMElement) => {
+    if (element.semanticKey) {
+      selectorMap[element.semanticKey] = generateSelector(element);
+    }
+  });
+  
+  // Store the URL to mapping file relationship
+  const mappingFile = path.join(mappingPath, urlToFilename(url, featureName));
+  urlMappingCache[url] = mappingFile;
+  
+  // Clear cache to ensure fresh data on next request
+  delete mappingCache[mappingFile];
+  
+  return selectorMap;
+}
+
+/**
+ * Convert URL to a filename
+ */
+function urlToFilename(url: string, featureName?: string): string {
+  const urlObj = new URL(url);
+  const hostname = urlObj.hostname.replace(/\./g, '_');
+  const pathname = urlObj.pathname.replace(/\//g, '_');
+  
+  const featurePrefix = featureName ? 
+    `${featureName.toLowerCase()}_` : '';
+  
+  return `${featurePrefix}${hostname}${pathname}.json`;
+}
+
+/**
+ * Get all available semantic keys
+ * 
+ * @param mappingPath Custom path to the mapping files (optional)
+ * @returns Array of all semantic keys with their descriptions
+ */
+export async function getAllSemanticKeys(
   mappingPath: string = './mappings'
-): Promise<string> {
+): Promise<Array<{ key: string, description: string }>> {
   // Load all mapping files if not in cache
   if (Object.keys(mappingCache).length === 0) {
     await loadAllMappings(mappingPath);
   }
-
-  // Try to detect the feature/context from the calling stack if not provided
-  if (!featureName) {
-    featureName = await detectFeatureFromCallingContext();
-  }
-
-  // Create a normalized partial key for matching
-  const normalizedPartialKey = partialKey.toLowerCase().trim();
-
-  // Different matching strategies
-  const matchingElements: Array<{element: DOMElement, matchScore: number}> = [];
-
-  // Collect all elements with semantic keys
+  
+  const allKeys: Array<{ key: string, description: string }> = [];
+  
+  // Collect all semantic keys from all mapping files
   for (const file of Object.keys(mappingCache)) {
-    for (const element of mappingCache[file]) {
-      if (!element.semanticKey) continue;
-      
-      const key = element.semanticKey.toLowerCase();
-      let matchScore = 0;
-
-      // Exact match gets highest score
-      if (key === normalizedPartialKey) {
-        matchScore = 100;
-      }
-      // Feature-prefixed match
-      else if (featureName && key === `${featureName.toLowerCase()}_${normalizedPartialKey}`) {
-        matchScore = 95;
-      }
-      // Starts with match
-      else if (key.startsWith(normalizedPartialKey)) {
-        matchScore = 90;
-      }
-      // Contains match
-      else if (key.includes(normalizedPartialKey)) {
-        matchScore = 80;
-      }
-      // For wildcards or more complex partial matches
-      else if (normalizedPartialKey.includes('*')) {
-        const pattern = normalizedPartialKey.replace(/\*/g, '.*');
-        if (new RegExp(pattern).test(key)) {
-          matchScore = 70;
-        }
-      }
-      // Word match (each word in partial key appears in the full key)
-      else {
-        const words = normalizedPartialKey.split(/[_\s]+/).filter(w => w.length > 2);
-        if (words.length > 0) {
-          const matches = words.filter(word => key.includes(word));
-          if (matches.length === words.length) {
-            matchScore = 60 + (matches.length * 5);
-          }
-          else if (matches.length > 0) {
-            matchScore = 40 + (matches.length * 5);
-          }
-        }
-      }
-
-      // If there's a feature name and this element belongs to it, boost the score
-      if (featureName && 
-          (element.featureName === featureName || 
-           element.semanticKey.startsWith(`${featureName.toLowerCase()}_`))) {
-        matchScore += 10;
-      }
-
-      // If the element has a description that matches keywords, boost score
-      if (element.innerText && normalizedPartialKey.split(/[_\s]+/).some(word => 
-          element.innerText!.toLowerCase().includes(word) && word.length > 2)) {
-        matchScore += 5;
-      }
-
-      if (matchScore > 0) {
-        matchingElements.push({ element, matchScore });
-      }
-    }
-  }
-
-  // Sort by match score
-  matchingElements.sort((a, b) => b.matchScore - a.matchScore);
-
-  // If we have matches, return the best one
-  if (matchingElements.length > 0) {
-    const bestMatch = matchingElements[0].element;
+    const elements = mappingCache[file];
     
-    // Log top matches for debugging (limited to top 3)
-    console.log(`Smart selector matched '${partialKey}' to:`);
-    matchingElements.slice(0, 3).forEach(({ element, matchScore }) => {
-      console.log(`- ${element.semanticKey} (score: ${matchScore})`);
-    });
-
-    // Return the best available selector
-    if (bestMatch.attributes && bestMatch.attributes['data-testid']) {
-      return `[data-testid="${bestMatch.attributes['data-testid']}"]`;
-    } else if (bestMatch.id) {
-      return `#${bestMatch.id}`;
-    } else if (bestMatch.xpath) {
-      return bestMatch.xpath;
+    for (const element of elements) {
+      if (element.semanticKey) {
+        // Create a description of the element
+        const description = element.innerText ? 
+          `${element.tagName} with text "${element.innerText.substring(0, 50)}${element.innerText.length > 50 ? '...' : ''}"` : 
+          `${element.tagName} element`;
+        
+        // Add feature info if available
+        const featureInfo = element.featureName ? 
+          ` (feature: ${element.featureName})` : 
+          '';
+        
+        allKeys.push({
+          key: element.semanticKey,
+          description: `${description}${featureInfo}`
+        });
+      }
     }
   }
+  
+  return allKeys;
+}
 
-  throw new Error(`No matching semantic key found for '${partialKey}'`);
+/**
+ * Self-healing wrapper that uses natural language descriptions to find elements
+ * 
+ * @param page The Playwright page object
+ * @param description Human-readable description of the element (e.g., "search button")
+ * @param featureName Optional feature name to scope the search
+ * @param mappingPath Custom path to the mapping files
+ * @returns A locator for the element
+ */
+export async function getByDescription(
+  page: any, // Using any to avoid Playwright dependency, should be Page from @playwright/test
+  description: string,
+  featureName?: string,
+  mappingPath: string = './mappings'
+): Promise<any> { // Returns a Playwright Locator
+  try {
+    const selector = await getElementByDescription(description, featureName, mappingPath);
+    return page.locator(selector);
+  } catch (error) {
+    throw new Error(`Could not find element matching description '${description}': ${error}`);
+  }
 }
 
 /**
@@ -292,162 +605,6 @@ async function detectFeatureFromCallingContext(): Promise<string | undefined> {
 }
 
 /**
- * Find an element by its semantic key in the cache
- */
-function findElementByKey(semanticKey: string): DOMElement | undefined {
-  for (const file of Object.keys(mappingCache)) {
-    const elements = mappingCache[file];
-    const element = elements.find(el => el.semanticKey === semanticKey);
-    if (element) {
-      return element;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Load all mapping files into cache
- */
-async function loadAllMappings(mappingPath: string): Promise<void> {
-  console.log(`Loading mapping files from: ${mappingPath}`);
-  
-  const globPattern = path.join(mappingPath, '*.json');
-  console.log(`Using glob pattern: ${globPattern}`);
-  
-  const files = glob.sync(globPattern);
-  console.log(`Found ${files.length} mapping files: ${files.join(', ')}`);
-  
-  for (const file of files) {
-    try {
-      if (!mappingCache[file]) {
-        console.log(`Reading mapping file: ${file}`);
-        const mappingData = JSON.parse(fs.readFileSync(file, 'utf-8'));
-        console.log(`Mapping file contains ${mappingData.length} elements`);
-        mappingCache[file] = mappingData;
-      }
-    } catch (error) {
-      console.error(`Error reading mapping file ${file}:`, error);
-    }
-  }
-  
-  // Debug info about cached mappings
-  const totalKeys = Object.values(mappingCache).reduce((acc, elements) => 
-    acc + elements.filter(el => el.semanticKey).length, 0
-  );
-  console.log(`Total cached elements with semantic keys: ${totalKeys}`);
-}
-
-/**
- * Updates the selector index for the specified URL
- * 
- * @param url The URL to update selectors for
- * @param mappingPath Custom path to the mapping files (optional)
- * @param featureName Optional feature name for contextual mapping
- * @returns A map of semantic keys to selectors
- */
-export async function updateSelectorIndex(
-  url: string,
-  mappingPath: string = './mappings',
-  featureName?: string
-): Promise<SelectorMap> {
-  // Import the DOMMonitor dynamically to avoid circular dependencies
-  const { DOMMonitor } = await import('../dom-monitor');
-  
-  const monitor = new DOMMonitor({ 
-    outputPath: mappingPath,
-    featureName: featureName // Pass feature name to the DOM monitor
-  });
-  await monitor.init();
-  await monitor.navigateTo(url);
-  
-  const elements = await monitor.extractDOMElements();
-  const elementsWithKeys = await monitor.generateSemanticKeys(elements);
-  
-  await monitor.saveReport(url, elementsWithKeys);
-  await monitor.close();
-  
-  // Create a map of semantic keys to selectors
-  const selectorMap: SelectorMap = {};
-  elementsWithKeys.forEach((element: DOMElement) => {
-    if (element.semanticKey) {
-      if (element.attributes && element.attributes['data-testid']) {
-        selectorMap[element.semanticKey] = `[data-testid="${element.attributes['data-testid']}"]`;
-      } else if (element.id) {
-        selectorMap[element.semanticKey] = `#${element.id}`;
-      } else if (element.xpath) {
-        selectorMap[element.semanticKey] = element.xpath;
-      }
-    }
-  });
-  
-  // Store the URL to mapping file relationship
-  const mappingFile = path.join(mappingPath, urlToFilename(url, featureName));
-  urlMappingCache[url] = mappingFile;
-  
-  // Clear cache to ensure fresh data on next request
-  delete mappingCache[mappingFile];
-  
-  return selectorMap;
-}
-
-/**
- * Convert URL to a filename
- */
-function urlToFilename(url: string, featureName?: string): string {
-  const urlObj = new URL(url);
-  const hostname = urlObj.hostname.replace(/\./g, '_');
-  const pathname = urlObj.pathname.replace(/\//g, '_');
-  
-  const featurePrefix = featureName ? 
-    `${featureName.toLowerCase()}_` : '';
-  
-  return `${featurePrefix}${hostname}${pathname}.json`;
-}
-
-/**
- * Get all available semantic keys
- * 
- * @param mappingPath Custom path to the mapping files (optional)
- * @returns Array of all semantic keys with their descriptions
- */
-export async function getAllSemanticKeys(
-  mappingPath: string = './mappings'
-): Promise<Array<{ key: string, description: string }>> {
-  // Load all mapping files if not in cache
-  if (Object.keys(mappingCache).length === 0) {
-    await loadAllMappings(mappingPath);
-  }
-  
-  const allKeys: Array<{ key: string, description: string }> = [];
-  
-  // Collect all semantic keys from all mapping files
-  for (const file of Object.keys(mappingCache)) {
-    const elements = mappingCache[file];
-    
-    for (const element of elements) {
-      if (element.semanticKey) {
-        // Create a description of the element
-        const description = element.innerText ? 
-          `${element.tagName} with text "${element.innerText.substring(0, 50)}${element.innerText.length > 50 ? '...' : ''}"` : 
-          `${element.tagName} element`;
-        
-        // Add feature info if available
-        const featureInfo = element.featureName ? 
-          ` (feature: ${element.featureName})` : 
-          '';
-        
-        allKeys.push({
-          key: element.semanticKey,
-          description: `${description}${featureInfo}`
-        });
-      }
-    }
-  }
-  
-  return allKeys;
-}
-
-/**
  * List all semantic keys from specific feature
  */
 export async function getFeatureSemanticKeys(
@@ -500,4 +657,44 @@ export async function suggestSemanticKeys(
   .filter(item => item.score > 0) // Only return items with some relevance
   .sort((a, b) => b.score - a.score) // Sort by score in descending order
   .slice(0, 10); // Limit to top 10 results
+}
+
+// DEPRECATED: Export compatibility functions to avoid breaking existing code
+// These will be removed in a future version
+
+/**
+ * DEPRECATED: Use getByDescription instead
+ * @deprecated Use getByDescription for better natural language matching
+ */
+export async function getSemanticSelector(key: string): Promise<string> {
+  console.warn('getSemanticSelector is deprecated. Use getByDescription instead for better natural language matching.');
+  try {
+    const element = await getElementByDescription(key);
+    return element;
+  } catch (error) {
+    return `[data-testid="${key}"]`;
+  }
+}
+
+/**
+ * DEPRECATED: Use getByDescription instead
+ * @deprecated Use getByDescription for better natural language matching
+ */
+export async function getSelfHealingLocator(page: any, key: string): Promise<any> {
+  console.warn('getSelfHealingLocator is deprecated. Use getByDescription instead for better natural language matching.');
+  try {
+    return await getByDescription(page, key);
+  } catch (error) {
+    return page.locator(`[data-testid="${key}"]`);
+  }
+}
+
+/**
+ * DEPRECATED: No longer needed with getByDescription
+ * @deprecated No longer needed with the new natural language selectors
+ */
+export async function updateSelectorForKey(key: string, url: string): Promise<string> {
+  console.warn('updateSelectorForKey is deprecated and will be removed in a future version.');
+  const selectorMap = await updateSelectorIndex(url);
+  return selectorMap[key] || `[data-testid="${key}"]`;
 } 

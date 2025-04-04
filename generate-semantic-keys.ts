@@ -465,13 +465,13 @@ function generateHTMLReport(url: string, elements: any[], context?: string): str
           
           <div class="code-block">
             ${element.semanticKey ? 
-              `// Using semantic key\nconst ${element.semanticKey}Selector = await getSemanticSelector('${element.semanticKey}');\nawait page.locator(${element.semanticKey}Selector).click();` : 
+              `// Using semantic key\nconst ${element.semanticKey}Selector = await getElementByDescription('${element.semanticKey}');\nawait page.locator(${element.semanticKey}Selector).click();` : 
               '// No semantic key available'}
           </div>
           
           <button class="copy-button" 
                   onclick="copyToClipboard('${element.semanticKey ? 
-                    `const ${element.semanticKey}Selector = await getSemanticSelector(\\'${element.semanticKey}\\');\\nawait page.locator(${element.semanticKey}Selector).click();`.replace(/"/g, '\\"') : 
+                    `const ${element.semanticKey}Selector = await getElementByDescription(\\'${element.semanticKey}\\');\\nawait page.locator(${element.semanticKey}Selector).click();`.replace(/"/g, '\\"') : 
                     `await page.locator(\\'${element.xpath}\\').click();`.replace(/"/g, '\\"')}')">
             Copy Code
           </button>
@@ -484,7 +484,7 @@ function generateHTMLReport(url: string, elements: any[], context?: string): str
       <div class="code-block">
         <pre>
 import { test, expect } from '@playwright/test';
-import { getSemanticSelector } from '../utils/semantic-helper';
+import { getElementByDescription } from '../utils/semantic-helper';
 
 test('Test using semantic selectors for ${url}', async ({ page }) => {
   // Navigate to page
@@ -501,7 +501,7 @@ ${elements.filter(e => e.semanticKey && e.isVisible).slice(0, 5).map(element => 
       "waitFor({ state: 'visible' })";
       
   return `  // ${element.innerText ? element.innerText.substring(0, 30) : element.tagName}
-  const ${key}Selector = await getSemanticSelector('${key}');
+  const ${key}Selector = await getElementByDescription('${key}');
   await page.locator(${key}Selector).${action};
 `;
 }).join('\n')}
